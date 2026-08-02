@@ -1,0 +1,17 @@
+# Build-Artefakte (werden komplett neu generiert)
+build/
+managed_components/
+
+# Gerätespezifische/generierte Konfiguration
+sdkconfig
+sdkconfig.old
+
+# Editor-/OS-Müll
+.DS_Store
+.vscode/
+*.bak
+*.orig
+
+# Backup-Dateien (siehe unsere Lektion von vorhin!)
+*_backup.*
+*.backup

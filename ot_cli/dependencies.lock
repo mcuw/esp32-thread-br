@@ -1,0 +1,92 @@
+dependencies:
+  cmd_system:
+    dependencies: []
+    source:
+      path: ../../system/console/advanced/components/cmd_system
+      type: local
+    version: '*'
+  esp-qa/coexist-cmd:
+    component_hash: 71156a75746d1da3d5534b9acd45be37c293395e271f9712db197ce810555ae5
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.3'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 0.0.2
+  espressif/esp_ot_cli_extension:
+    component_hash: 1f2cc33cca0d2c50d5f5af13b65c1a6c07453258317f034f1a20e84a2f2dbcc7
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.0'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 2.0.3
+  espressif/iperf:
+    component_hash: 7ee222b87da6e69118814a1e04fbc6e0af6814cdd364f7f51cb58770d2478224
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=4.3'
+    source:
+      registry_url: https://components.espressif.com
+      type: service
+    version: 1.0.2
+  espressif/iperf-cmd:
+    component_hash: 112e912c230db6e8863194854950a83d8ed042101d9c57ebdfab8a505c8d8c21
+    dependencies:
+    - name: espressif/iperf
+      registry_url: https://components.espressif.com
+      require: private
+      version: =1.0.2
+    - name: idf
+      require: private
+      version: '>=4.3'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 1.0.2
+  espressif/led_strip:
+    component_hash: 28621486f77229aaf81c71f5e15d6fbf36c2949cf11094e07090593e659e7639
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.0'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 3.0.3
+  idf:
+    source:
+      type: idf
+    version: 6.2.0
+  ot_examples_common:
+    dependencies:
+    - name: espressif/iperf-cmd
+      version: ^1.0.2
+    - name: cmd_system
+      path: ${IDF_PATH}/examples/system/console/advanced/components/cmd_system
+    source:
+      path: ../ot_common_components/ot_examples_common
+      type: local
+    version: '*'
+  ot_led:
+    dependencies:
+    - name: espressif/led_strip
+      version: ^3.0.0
+    source:
+      path: ../ot_common_components/ot_led
+      type: local
+    version: '*'
+direct_dependencies:
+- esp-qa/coexist-cmd
+- espressif/esp_ot_cli_extension
+- idf
+- ot_examples_common
+- ot_led
+manifest_hash: 9283ecc281b4c4b25c4995552aaa9a6fbcd829aeb2ee01ee7a9391bcf5d80866
+target: esp32c6
+version: 3.0.0
