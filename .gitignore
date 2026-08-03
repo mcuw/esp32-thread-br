@@ -1,17 +1,18 @@
-# Build-Artefakte (werden komplett neu generiert)
+# Build-artefacts (auto-generated)
 build/
 managed_components/
+dependencies.lock
 
-# Gerätespezifische/generierte Konfiguration
+# device depended and generated configuration
 sdkconfig
 sdkconfig.old
 
-# Editor-/OS-Müll
+# Editor-/OS-specific files
 .DS_Store
 .vscode/
 *.bak
 *.orig
 
-# Backup-Dateien (siehe unsere Lektion von vorhin!)
+# Backup-files
 *_backup.*
 *.backup
