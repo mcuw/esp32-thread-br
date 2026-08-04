@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*.*.*'
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -49,7 +52,7 @@ jobs:
           cp partition_table/partition-table.bin ../../partition-table-${GITHUB_REF_NAME}.bin
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: |
             esp_ot_br-${{ github.ref_name }}.bin
