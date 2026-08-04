@@ -1,0 +1,14 @@
+info:
+  name: ota-status
+  type: http
+
+http:
+  method: GET
+  url: http://esp-ot-br.local/api/ota/status
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

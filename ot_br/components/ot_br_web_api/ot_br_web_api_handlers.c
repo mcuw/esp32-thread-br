@@ -12,11 +12,15 @@
 #include "openthread/joiner.h"
 #include "esp_openthread_lock.h"
 
+// OTA
+#include "ot_br_web_api_ota.h"
+#include "esp_ota_ops.h"
+
 static const char *TAG = "ot_br_web_handlers";
 
 extern bool ot_br_web_api_check_auth(httpd_req_t *req);
 
-// -------- Hilfsfunktionen --------
+// -------- Helpers --------
 
 static void send_json(httpd_req_t *req, cJSON *json)
 {
@@ -140,13 +144,13 @@ static esp_err_t thread_dataset_masked_handler(httpd_req_t *req)
         hex_encode(dataset.mExtendedPanId.m8, 8, extpanid);
         cJSON_AddStringToObject(j, "extpanid", extpanid);
     }
-    // Bewusst NICHT enthalten: mNetworkKey, mPskc
+    // intended exclude: mNetworkKey, mPskc
 
     send_json(req, j);
     return ESP_OK;
 }
 
-// -------- GET /api/thread/dataset/full (mit Network Key, Auth erforderlich) --------
+// -------- GET /api/thread/dataset/full (with Network Key, Auth is required) --------
 
 static esp_err_t thread_dataset_full_handler(httpd_req_t *req)
 {
@@ -189,7 +193,7 @@ static esp_err_t thread_dataset_full_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
-// -------- POST /api/thread/dataset/init (Auth erforderlich) --------
+// -------- POST /api/thread/dataset/init (Auth is required) --------
 // Body: {"network_name": "MyThreadNet", "channel": 15}
 
 static esp_err_t thread_dataset_init_handler(httpd_req_t *req)
@@ -245,7 +249,7 @@ static esp_err_t thread_dataset_init_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
-// -------- POST /api/thread/start (Auth erforderlich) --------
+// -------- POST /api/thread/start (Auth is required) --------
 
 static esp_err_t thread_start_handler(httpd_req_t *req)
 {
@@ -269,7 +273,7 @@ static esp_err_t thread_start_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
-// -------- POST /api/thread/stop (Auth erforderlich) --------
+// -------- POST /api/thread/stop (Auth is required) --------
 
 static esp_err_t thread_stop_handler(httpd_req_t *req)
 {
@@ -317,7 +321,7 @@ static esp_err_t thread_neighbors_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
-// -------- POST /api/thread/commissioner/start (Auth erforderlich) --------
+// -------- POST /api/thread/commissioner/start (Auth is required) --------
 
 static esp_err_t commissioner_start_handler(httpd_req_t *req)
 {
@@ -340,7 +344,7 @@ static esp_err_t commissioner_start_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
-// -------- POST /api/thread/commissioner/joiner (Auth erforderlich) --------
+// -------- POST /api/thread/commissioner/joiner (Auth is required) --------
 // Body: {"eui64": "*", "pskd": "J01NME"}
 
 static esp_err_t commissioner_joiner_add_handler(httpd_req_t *req)
@@ -404,6 +408,74 @@ static esp_err_t commissioner_joiner_add_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+// -------- OTA --------
+
+static esp_err_t ota_status_handler(httpd_req_t *req)
+{
+    cJSON *j = cJSON_CreateObject();
+
+    const esp_app_desc_t *app_desc = esp_app_get_description();
+    cJSON_AddStringToObject(j, "current_version", app_desc->version);
+
+    const esp_partition_t *running = esp_ota_get_running_partition();
+    cJSON_AddStringToObject(j, "running_partition", running->label);
+
+    ota_state_t state = ot_br_ota_get_state();
+    const char *state_str = "idle";
+    switch (state) {
+        case OTA_STATE_IN_PROGRESS: state_str = "in_progress"; break;
+        case OTA_STATE_SUCCESS:     state_str = "success"; break;
+        case OTA_STATE_FAILED:      state_str = "failed"; break;
+        default: break;
+    }
+    cJSON_AddStringToObject(j, "state", state_str);
+    cJSON_AddNumberToObject(j, "progress_percent", ot_br_ota_get_progress_percent());
+    if (state == OTA_STATE_FAILED) {
+        cJSON_AddStringToObject(j, "error", ot_br_ota_get_error());
+    }
+
+    send_json(req, j);
+    return ESP_OK;
+}
+
+static esp_err_t ota_update_handler(httpd_req_t *req)
+{
+    if (!ot_br_web_api_check_auth(req)) return ESP_OK;
+
+    char *body = read_body(req);
+    if (!body) {
+        send_json_error(req, "400 Bad Request", "missing body");
+        return ESP_OK;
+    }
+    cJSON *json = cJSON_Parse(body);
+    free(body);
+    if (!json) {
+        send_json_error(req, "400 Bad Request", "invalid JSON");
+        return ESP_OK;
+    }
+
+    cJSON *url_item = cJSON_GetObjectItem(json, "url");
+    if (!cJSON_IsString(url_item)) {
+        cJSON_Delete(json);
+        send_json_error(req, "400 Bad Request", "url required");
+        return ESP_OK;
+    }
+
+    esp_err_t err = ot_br_ota_start(url_item->valuestring);
+    cJSON_Delete(json);
+
+    if (err != ESP_OK) {
+        send_json_error(req, "409 Conflict", "OTA already in progress");
+        return ESP_OK;
+    }
+
+    cJSON *j = cJSON_CreateObject();
+    cJSON_AddBoolToObject(j, "success", true);
+    cJSON_AddStringToObject(j, "status", "started");
+    send_json(req, j);
+    return ESP_OK;
+}
+
 // -------- Registrierung aller URIs --------
 
 void ot_br_web_api_register_handlers(httpd_handle_t server)
@@ -419,6 +491,9 @@ void ot_br_web_api_register_handlers(httpd_handle_t server)
         { "/api/thread/neighbors",            HTTP_GET,  thread_neighbors_handler,        NULL },
         { "/api/thread/commissioner/start",   HTTP_POST, commissioner_start_handler,       NULL },
         { "/api/thread/commissioner/joiner",  HTTP_POST, commissioner_joiner_add_handler,  NULL },
+        // OTA
+        { "/api/ota/status", HTTP_GET,  ota_status_handler, NULL },
+        { "/api/ota/update", HTTP_POST, ota_update_handler, NULL },
     };
 
     for (size_t i = 0; i < sizeof(uris) / sizeof(uris[0]); i++) {

@@ -1,0 +1,24 @@
+info:
+  name: ota-update
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: http://esp-ot-br.local/api/ota/update
+  headers:
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "url": "https://github.com/mcuw/esp32-thread-br/releases/latest/download/esp_ot_br-v0.1.0.bin"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
