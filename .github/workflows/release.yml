@@ -1,0 +1,58 @@
+name: Build and Release Firmware
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # https://github.com/actions/checkout
+      - name: Checkout Projekt-Repo
+        uses: actions/checkout@v7
+
+      # https://github.com/actions/cache
+      - name: Cache ESP-IDF Preview
+        uses: actions/cache@v6
+        with:
+          path: ~/esp-idf-preview
+          key: esp-idf-preview-102122904ad
+
+      - name: Clone ESP-IDF Preview (if not in Cache)
+        run: |
+          if [ ! -d ~/esp-idf-preview/.git ]; then
+            git clone --recursive https://github.com/espressif/esp-idf.git ~/esp-idf-preview
+            cd ~/esp-idf-preview
+            git checkout 102122904ad
+            git submodule update --init --recursive
+          fi
+
+      - name: Install Toolchain
+        run: |
+          cd ~/esp-idf-preview
+          ./install.sh esp32s31
+
+      - name: Build firmware
+        run: |
+          . ~/esp-idf-preview/export.sh
+          cd ot_br
+          idf.py --preview set-target esp32s31
+          idf.py build -D PROJECT_VER=${GITHUB_REF_NAME}
+
+      - name: Rename Artifacts
+        run: |
+          cd ot_br/build
+          cp esp_ot_br.bin ../../esp_ot_br-${GITHUB_REF_NAME}.bin
+          cp bootloader/bootloader.bin ../../bootloader-${GITHUB_REF_NAME}.bin
+          cp partition_table/partition-table.bin ../../partition-table-${GITHUB_REF_NAME}.bin
+
+      - name: GitHub Release erstellen
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            esp_ot_br-${{ github.ref_name }}.bin
+            bootloader-${{ github.ref_name }}.bin
+            partition-table-${{ github.ref_name }}.bin
+          generate_release_notes: true

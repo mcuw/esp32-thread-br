@@ -1,5 +1,5 @@
 idf_component_register(
-    SRCS "ot_br_web_api.c" "ot_br_web_api_auth.c" "ot_br_web_api_handlers.c"
+    SRCS "ot_br_web_api.c" "ot_br_web_api_auth.c" "ot_br_web_api_handlers.c" "ot_br_web_api_ota.c"
     INCLUDE_DIRS "include"
-    REQUIRES esp_http_server openthread nvs_flash esp_hw_support esp_app_format mbedtls espressif__cjson
+    REQUIRES esp_http_server openthread nvs_flash esp_hw_support esp_app_format mbedtls espressif__cjson app_update esp_https_ota esp_http_client
 )

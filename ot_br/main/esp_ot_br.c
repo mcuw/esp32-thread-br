@@ -41,7 +41,11 @@
 #include "openthread/thread.h"
 #include "openthread/dataset.h"
 
+// API
 #include "ot_br_web_api.h"
+
+// OTA
+#include "ot_br_web_api_ota.h"
 
 #if CONFIG_OPENTHREAD_STATE_INDICATOR_ENABLE
 #include "ot_led_strip.h"
@@ -73,7 +77,7 @@ static void rcp_failure_hardware_reset_handler(void)
 }
 #endif
 
-void app_main(void)
+void app_main()
 {
     // Used eventfds:
     // * netif
@@ -85,11 +89,11 @@ void app_main(void)
     // * radio driver (A native radio device needs a eventfd for radio driver.)
     // * SpiSpinelInterface (The Spi Spinel Interface needs a eventfd.)
     // The above will not exist at the same time.
-    max_eventfd++;
+    ++max_eventfd;
 #endif
 #if CONFIG_OPENTHREAD_RADIO_TREL
     // * TREL reception (The Thread Radio Encapsulation Link needs a eventfd for reception.)
-    max_eventfd++;
+    ++max_eventfd;
 #endif
     esp_vfs_eventfd_config_t eventfd_config = {
         .max_fds = max_eventfd,
@@ -160,6 +164,9 @@ void app_main(void)
     }
 
     ESP_ERROR_CHECK(ot_br_web_api_start(esp_openthread_get_instance()));
+
+    // health check: mark current firmware as valid to disable rollback protection
+    ot_br_ota_mark_valid();
 
 #endif
 }
