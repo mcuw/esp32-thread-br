@@ -48,7 +48,7 @@ jobs:
           cp bootloader/bootloader.bin ../../bootloader-${GITHUB_REF_NAME}.bin
           cp partition_table/partition-table.bin ../../partition-table-${GITHUB_REF_NAME}.bin
 
-      - name: GitHub Release erstellen
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
