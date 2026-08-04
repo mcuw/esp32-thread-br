@@ -25,6 +25,8 @@ static void ota_task(void *pvParameter)
         .url = s_url,
         .crt_bundle_attach = esp_crt_bundle_attach,
         .keep_alive_enable = true,
+        .buffer_size = 4096,       // Header read buffer size
+        .buffer_size_tx = 2048,    // Send buffer (for long Auth-Header etc.)
     };
     esp_https_ota_config_t ota_config = {
         .http_config = &http_config,
