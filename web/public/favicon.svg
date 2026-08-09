@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 272 272">
+  <title>Hexagon with isometric cubes</title>
+  <g fill="none" stroke="#4FB8D6" stroke-width="5" stroke-linejoin="round">
+    <path d="M137 1 L245 66 L245 205 L137 271 L28 205 L28 66 Z"/>
+  </g>
+
+  <g fill="#4FB8D6">
+    <!-- upper cube -->
+    <path d="M98 80 L137 54 L177 78 L137 105 Z"/>
+    <path d="M98 80 L137 105 L137 153 L96 129 L96 81 Z"/>
+    <path d="M137 105 L177 79 L177 128 L137 153 Z"/>
+
+    <!-- lower left cube -->
+    <path d="M63 151 L94 132 L124 151 L124 185 L94 203 L63 185 Z"/>
+
+    <!-- lower right cube -->
+    <path d="M151 151 L180 132 L211 151 L211 185 L180 203 L151 185 Z"/>
+  </g>
+
+  <!-- central dark separation lines -->
+  <g fill="none" stroke="#0A3046" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M98 80 L137 105 L177 79"/>
+    <path d="M137 105 L137 153"/>
+    <path d="M96 129 L137 153"/>
+    <path d="M137 153 L177 128"/>
+  </g>
+</svg>

@@ -3,7 +3,30 @@
 ## Bullet points
 
 - Supports single ESP32-S31 microcontroller setup
+
 - Supports stable and fast 1 GB/s Ethernet network connection instead of rely on Wi-Fi
+
+## Features
+
+### Backend
+
+- Thread Border Router with Ethernet-Backhaul, Auto-Attach after Reboot
+
+- REST-API with Setup-Token-Auth (Device-Info, Thread-State, Dataset, Neighbors, Commissioner, OTA)
+
+- OTA with GitHub Releases, including Rollback-Protection
+
+- 16-MB-Partitionslayout incl. prepared nvs_keys for future encryption
+
+- CI: firmware build
+
+### Frontend
+
+- Fast Astro with Qwik interactions
+
+- CI: static file generation
+
+- dev-proxy for local development
 
 ## Prerequisites
 

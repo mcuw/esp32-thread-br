@@ -1,0 +1,34 @@
+{
+  "name": "web",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "astro": "astro",
+    "sync": "astro sync",
+    "build": "pnpm fix && astro build",
+    "check": "biome ci . && astro check",
+    "check.format": "biome format .",
+    "check.lint": "biome check .",
+    "dev": "astro dev",
+    "fix": "pnpm lint && pnpm format",
+    "format": "biome format --write .",
+    "lint": "biome check --write --unsafe .",
+    "preview": "pnpm build && astro preview",
+    "prod": "pnpm check && astro build",
+    "start": "astro dev --open"
+  },
+  "dependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@qwik.dev/astro": "^1.0.2",
+    "@qwik.dev/core": "2.0.0-beta.38",
+    "astro": "^6.4.8"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/node": "^26.2.0",
+    "vite": "^7.3.6"
+  },
+  "overrides": {
+    "vite": "^7"
+  }
+}
