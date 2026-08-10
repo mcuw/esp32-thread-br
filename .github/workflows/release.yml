@@ -11,11 +11,7 @@ permissions:
   contents: write
 
 jobs:
-  web-check:
-    uses: ./.github/workflows/web-check.yml
-
   build:
-    needs: web-check
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.experimental }}
     strategy:
