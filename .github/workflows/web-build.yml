@@ -29,8 +29,8 @@ jobs:
           cache-dependency-path: web/pnpm-lock.yaml
 
       - name: ✨ Install dependencies
-        working-directory: web
         run: |
+          cd web
           corepack enable
           pnpm install
 
