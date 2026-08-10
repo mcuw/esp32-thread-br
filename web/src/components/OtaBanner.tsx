@@ -92,7 +92,7 @@ export default component$(() => {
             }}
           />
           <button type="button" onClick$={startUpdate}>
-            Jetzt aktualisieren
+            OK
           </button>
         </div>
       )}

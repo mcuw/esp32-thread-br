@@ -17,4 +17,7 @@ dependencies:
       ${IDF_PATH}/examples/openthread/ot_common_components/ot_examples_common
   esp-qa/coexist-cmd:
     version: ~0.0.1
-  espressif/cjson: '*'
+  # https://components.espressif.com/components/espressif/cjson/
+  espressif/cjson: ^1.7.19~2
+  # https://github.com/joltwallet/esp_littlefs
+  joltwallet/littlefs: ^1.22.3

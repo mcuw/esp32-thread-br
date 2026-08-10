@@ -22,7 +22,7 @@
 
 ### Frontend
 
-- Fast Astro with Qwik interactions
+- Fast Astro SSR with Qwik interactions
 
 - CI: static file generation
 
@@ -35,12 +35,32 @@
 
 ## Get Started
 
+Flash Thread border router firmware:
+
 ```sh
 . ~/.espressif/preview/export.sh
 cd ot_br
 idf.py --preview set-target esp32s31
 idf.py build flash monitor
 ```
+
+## Web change
+
+1. Edit frontend
+
+2. Build frontend
+
+```sh
+cd web && pnpm build
+```
+
+3. Build Firmware incl. UI-Partition and flash
+
+```sh
+cd ../ot_br && idf.py build flash monitor
+````
+
+4. Browser: (Hard-) Reload
 
 ## Supported Hardware Platforms
 
