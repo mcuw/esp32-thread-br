@@ -107,6 +107,7 @@ jobs:
           cp esp_ot_br.bin ../../esp_ot_br-${GITHUB_REF_NAME}.bin
           cp bootloader/bootloader.bin ../../bootloader-${GITHUB_REF_NAME}.bin
           cp partition_table/partition-table.bin ../../partition-table-${GITHUB_REF_NAME}.bin
+          cp littlefs_littlefs.bin ../../littlefs-${GITHUB_REF_NAME}.bin
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
