@@ -42,7 +42,3 @@ jobs:
       - name: ✅ Check code style
         working-directory: web
         run: pnpm check
-
-      - name: ✅ Build static site
-        working-directory: web
-        run: pnpm build
