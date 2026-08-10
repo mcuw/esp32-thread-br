@@ -47,6 +47,9 @@
 // OTA
 #include "ot_br_web_api_ota.h"
 
+// Setup Token
+#include "ot_br_web_api_setup_mode.h"
+
 #if CONFIG_OPENTHREAD_STATE_INDICATOR_ENABLE
 #include "ot_led_strip.h"
 #endif
@@ -121,6 +124,9 @@ void app_main()
     ot_external_coexist_init();
 #endif
 
+    // Setup Token
+    ot_br_setup_mode_init();
+
     static esp_openthread_config_t config = {
         .netif_config = ESP_NETIF_DEFAULT_OPENTHREAD(),
         .platform_config = {
@@ -163,6 +169,7 @@ void app_main()
         ESP_LOGE(TAG, "Konnte OpenThread-Lock nicht erhalten");
     }
 
+    // UI
     ESP_ERROR_CHECK(ot_br_web_api_start(esp_openthread_get_instance()));
 
     // health check: mark current firmware as valid to disable rollback protection
