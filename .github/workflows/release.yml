@@ -10,7 +10,16 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest]
+        node: [24.19]
+        experimental: [false]
+    name: 👷 CI Node-${{ matrix.node }} under ${{ matrix.os }}
+
     steps:
       # https://github.com/actions/checkout
       - name: Checkout Projekt-Repo
@@ -26,7 +35,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: 24.19
+          node-version: ${{ matrix.node }}
           cache: 'pnpm'
           cache-dependency-path: web/pnpm-lock.yaml
 
