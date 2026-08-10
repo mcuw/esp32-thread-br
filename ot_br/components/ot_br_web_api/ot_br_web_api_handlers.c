@@ -12,11 +12,16 @@
 #include "openthread/joiner.h"
 #include "esp_openthread_lock.h"
 
+// API
+#include "ot_br_web_api.h"
 // OTA
 #include "ot_br_web_api_ota.h"
 #include "esp_ota_ops.h"
 
-static const char *TAG = "ot_br_web_handlers";
+// Setup Token
+#include "ot_br_web_api_setup_mode.h"
+
+// static const char *TAG = "ot_br_web_handlers";
 
 extern bool ot_br_web_api_check_auth(httpd_req_t *req);
 
@@ -476,6 +481,46 @@ static esp_err_t ota_update_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+
+// Setup Token Handler
+//
+
+// GET /api/setup/status - ALWAYS non authentified, shows only the state
+static esp_err_t setup_status_handler(httpd_req_t *req)
+{
+    cJSON *j = cJSON_CreateObject();
+    cJSON_AddBoolToObject(j, "setup_mode_active", ot_br_setup_mode_is_active());
+    send_json(req, j);
+    return ESP_OK;
+}
+
+// GET /api/setup/token - returns the token ONLY during active setup mode
+static esp_err_t setup_token_handler(httpd_req_t *req)
+{
+    if (!ot_br_setup_mode_is_active()) {
+        send_json_error(req, "403 Forbidden", "setup mode not active - hold BOOT button for 3s");
+        return ESP_OK;
+    }
+
+    cJSON *j = cJSON_CreateObject();
+    cJSON_AddStringToObject(j, "token", ot_br_web_api_get_setup_token());
+    send_json(req, j);
+    return ESP_OK;
+}
+
+// POST /api/setup/complete - beendet den Setup-Modus vorzeitig (Auth erforderlich,
+// stellt sicher dass nur jemand mit dem gueltigen Token das Fenster schliessen kann)
+static esp_err_t setup_complete_handler(httpd_req_t *req)
+{
+    if (!ot_br_web_api_check_auth(req)) return ESP_OK;
+    ot_br_setup_mode_deactivate();
+    cJSON *j = cJSON_CreateObject();
+    cJSON_AddBoolToObject(j, "success", true);
+    send_json(req, j);
+    return ESP_OK;
+}
+
+
 // -------- Registrierung aller URIs --------
 
 void ot_br_web_api_register_handlers(httpd_handle_t server)
@@ -494,6 +539,10 @@ void ot_br_web_api_register_handlers(httpd_handle_t server)
         // OTA
         { "/api/ota/status", HTTP_GET,  ota_status_handler, NULL },
         { "/api/ota/update", HTTP_POST, ota_update_handler, NULL },
+        // Setup Token
+        { "/api/setup/status",   HTTP_GET,  setup_status_handler,   NULL },
+        { "/api/setup/token",    HTTP_GET,  setup_token_handler,    NULL },
+        { "/api/setup/complete", HTTP_POST, setup_complete_handler, NULL },
     };
 
     for (size_t i = 0; i < sizeof(uris) / sizeof(uris[0]); i++) {

@@ -23,6 +23,8 @@ export default component$(() => {
   const token = useSignal('');
 
   useVisibleTask$(async () => {
+    token.value = localStorage.getItem('ot_br_setup_token') ?? '';
+
     const status = await apiGet<OtaStatus>('/ota/status');
     currentVersion.value = status.current_version;
 
@@ -51,6 +53,7 @@ export default component$(() => {
       await apiPost('/ota/update', token.value, {
         url: asset.browser_download_url,
       });
+
       // Fortschritt pollen
       const poll = setInterval(async () => {
         const status = await apiGet<OtaStatus>('/ota/status');
@@ -82,19 +85,9 @@ export default component$(() => {
         (aktuell: {currentVersion.value})
       </p>
       {updateState.value === 'idle' && (
-        <div class="update-form">
-          <input
-            type="password"
-            placeholder="Setup-Token"
-            value={token.value}
-            onInput$={(e) => {
-              token.value = (e.target as HTMLInputElement).value;
-            }}
-          />
-          <button type="button" onClick$={startUpdate}>
-            OK
-          </button>
-        </div>
+        <button type="button" onClick$={startUpdate}>
+          Jetzt aktualisieren
+        </button>
       )}
       {updateState.value === 'updating' && <p>Update läuft...</p>}
       {updateState.value === 'done' && (
