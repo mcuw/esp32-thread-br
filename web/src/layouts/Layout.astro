@@ -1,0 +1,188 @@
+---
+interface Props {
+  title: string;
+}
+const { title } = Astro.props;
+---
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="ESP32 Thread Border Router" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <header>
+      <h1>{title}</h1>
+    </header>
+    <main>
+      <slot />
+    </main>
+    <footer>
+      <p>ESP32 Thread Border Router</p>
+    </footer>
+  </body>
+</html>
+
+<style is:global>
+  :root {
+    --bg: #0f1115;
+    --surface: #1a1d24;
+    --surface-hover: #22262f;
+    --border: #2a2e38;
+    --text: #e6e8eb;
+    --text-muted: #8b8f99;
+    --accent: #4f8cff;
+    --success: #3ecf8e;
+    --error: #ff5c5c;
+    --warning: #ffb84f;
+    --radius: 10px;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    font-family: system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  header {
+    padding: 1.5rem 1.5rem 0.5rem;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  header h1 {
+    font-size: 1.4rem;
+    margin: 0;
+  }
+
+  main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0.5rem 1.5rem 3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  footer {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    padding: 1.5rem;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+  }
+
+  .card h2 {
+    margin: 0 0 0.75rem;
+    font-size: 1rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  dl {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.4rem 1rem;
+    margin: 0;
+  }
+
+  dt {
+    color: var(--text-muted);
+  }
+
+  dd {
+    margin: 0;
+  }
+
+  code {
+    background: var(--surface-hover);
+    padding: 0.4rem 0;
+    border-radius: 4px;
+    font-size: 0.85rem;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+
+  th {
+    text-align: left;
+    color: var(--text-muted);
+    font-weight: 500;
+    padding: 0.4rem 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  td {
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .muted {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    margin: 0.75rem 0 0;
+  }
+
+  .error {
+    color: var(--error);
+  }
+
+  .banner {
+    background: linear-gradient(135deg, #1e3a5f, #1a1d24);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+  }
+
+  .banner p {
+    margin: 0 0 0.75rem;
+  }
+
+  .update-form {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .update-form input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    color: var(--text);
+    font-size: 0.9rem;
+  }
+
+  button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+
+  button:hover {
+    opacity: 0.9;
+  }
+</style>

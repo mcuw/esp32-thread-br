@@ -10,11 +10,59 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest]
+        node: [24.19]
+        experimental: [false]
+    name: 👷 CI Node-${{ matrix.node }} under ${{ matrix.os }}
+
     steps:
       # https://github.com/actions/checkout
       - name: Checkout Projekt-Repo
         uses: actions/checkout@v7
+
+
+      # --- Build Frontend at first ---
+      - name: Setp pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'pnpm'
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Install Frontend-Dependencies
+        working-directory: web
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
+
+      - name: Build Frontend
+        working-directory: web
+        run: pnpm build
+
+      - name: Check LittleFS-Partitions-size
+        working-directory: web
+        run: |
+          SIZE=$(du -sb dist | cut -f1)
+          LIMIT=$((2 * 1024 * 1024))  # 2 MB, eure littlefs-Partitionsgröße
+          echo "Frontend-Build: $((SIZE / 1024)) KB / $((LIMIT / 1024)) KB"
+          if [ "$SIZE" -gt "$LIMIT" ]; then
+            echo "::error::Frontend-Build (${SIZE} Byte) überschreitet die littlefs-Partition (${LIMIT} Byte)!"
+            exit 1
+          fi
+
+
+      #
+      # --- Build Firmware (automatically bind web/dist over littlefs_create_partition_image)
 
       # https://github.com/actions/cache
       - name: Cache ESP-IDF Preview
@@ -58,4 +106,5 @@ jobs:
             esp_ot_br-${{ github.ref_name }}.bin
             bootloader-${{ github.ref_name }}.bin
             partition-table-${{ github.ref_name }}.bin
+            littlefs-${{ github.ref_name }}.bin
           generate_release_notes: true

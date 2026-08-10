@@ -3,7 +3,30 @@
 ## Bullet points
 
 - Supports single ESP32-S31 microcontroller setup
+
 - Supports stable and fast 1 GB/s Ethernet network connection instead of rely on Wi-Fi
+
+## Features
+
+### Backend
+
+- Thread Border Router with Ethernet-Backhaul, Auto-Attach after Reboot
+
+- REST-API with Setup-Token-Auth (Device-Info, Thread-State, Dataset, Neighbors, Commissioner, OTA)
+
+- OTA with GitHub Releases, including Rollback-Protection
+
+- 16-MB-Partitionslayout incl. prepared nvs_keys for future encryption
+
+- CI: firmware build
+
+### Frontend
+
+- Fast Astro SSR with Qwik interactions
+
+- CI: static file generation
+
+- dev-proxy for local development
 
 ## Prerequisites
 
@@ -12,12 +35,32 @@
 
 ## Get Started
 
+Flash Thread border router firmware:
+
 ```sh
 . ~/.espressif/preview/export.sh
 cd ot_br
 idf.py --preview set-target esp32s31
 idf.py build flash monitor
 ```
+
+## Web change
+
+1. Edit frontend
+
+2. Build frontend
+
+```sh
+cd web && pnpm build
+```
+
+3. Build Firmware incl. UI-Partition and flash
+
+```sh
+cd ../ot_br && idf.py build flash monitor
+````
+
+4. Browser: (Hard-) Reload
 
 ## Supported Hardware Platforms
 
