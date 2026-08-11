@@ -437,6 +437,10 @@ static esp_err_t ota_status_handler(httpd_req_t *req)
     cJSON_AddNumberToObject(j, "progress_percent", ot_br_ota_get_progress_percent());
     if (state == OTA_STATE_FAILED) {
         cJSON_AddStringToObject(j, "error", ot_br_ota_get_error());
+        int http_status = ot_br_ota_get_last_http_status();
+        if (http_status > 0) {
+            cJSON_AddNumberToObject(j, "http_status", http_status);
+        }
     }
 
     send_json(req, j);

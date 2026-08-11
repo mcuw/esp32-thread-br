@@ -10,6 +10,8 @@ interface OtaStatus {
   current_version: string;
   state: string;
   progress_percent: number;
+  error?: string;
+  http_status?: number;
 }
 
 const GH_REPO = 'mcuw/esp32-thread-br';
@@ -21,6 +23,8 @@ export default component$(() => {
     'idle' | 'checking' | 'updating' | 'done' | 'error'
   >('idle');
   const token = useSignal('');
+  const progress = useSignal(0);
+  const lastError = useSignal('');
 
   useVisibleTask$(async () => {
     token.value = localStorage.getItem('ot_br_setup_token') ?? '';
@@ -49,6 +53,9 @@ export default component$(() => {
     }
 
     updateState.value = 'updating';
+    lastError.value = '';
+    progress.value = 0;
+
     try {
       await apiPost('/ota/update', token.value, {
         url: asset.browser_download_url,
@@ -57,16 +64,25 @@ export default component$(() => {
       // Fortschritt pollen
       const poll = setInterval(async () => {
         const status = await apiGet<OtaStatus>('/ota/status');
+        progress.value = status.progress_percent;
+
         if (status.state === 'success') {
           clearInterval(poll);
           updateState.value = 'done';
         } else if (status.state === 'failed') {
           clearInterval(poll);
           updateState.value = 'error';
+          lastError.value = status.error
+            ? `${status.error}${status.http_status ? ` (HTTP ${status.http_status})` : ''}`
+            : 'Unknown error occurred while updating firmware';
         }
-      }, 2000);
+      }, 1500);
     } catch (e) {
       updateState.value = 'error';
+      lastError.value =
+        e instanceof Error
+          ? e.message
+          : 'Unknown error occurred while starting the update';
     }
   });
 
@@ -74,27 +90,44 @@ export default component$(() => {
     latestRelease.value &&
     latestRelease.value.tag_name !== currentVersion.value;
 
-  if (!isNewer) {
+  if (!isNewer && updateState.value === 'idle') {
     return null;
   }
 
   return (
     <div class="banner">
-      <p>
-        Update verfügbar: <strong>{latestRelease.value?.tag_name}</strong>{' '}
-        (aktuell: {currentVersion.value})
-      </p>
-      {updateState.value === 'idle' && (
-        <button type="button" onClick$={startUpdate}>
-          Jetzt aktualisieren
-        </button>
+      {isNewer && updateState.value === 'idle' && (
+        <>
+          <p>
+            Update verfügbar: <strong>{latestRelease.value?.tag_name}</strong>{' '}
+            (aktuell: {currentVersion.value})
+          </p>
+          <button type="button" onClick$={startUpdate}>
+            Jetzt aktualisieren
+          </button>
+        </>
       )}
-      {updateState.value === 'updating' && <p>Update läuft...</p>}
+      {updateState.value === 'updating' && (
+        <div>
+          <p>Update läuft... {progress.value}%</p>
+          <div class="progress-bar">
+            <div
+              class="progress-fill"
+              style={{ width: `${progress.value}%` }}
+            />
+          </div>
+        </div>
+      )}
       {updateState.value === 'done' && (
-        <p>Update erfolgreich, Gerät startet neu...</p>
+        <p>Update success, device is restarting...</p>
       )}
       {updateState.value === 'error' && (
-        <p class="error">Update fehlgeschlagen.</p>
+        <div>
+          <p class="error">Failed to update firmware: {lastError.value}</p>
+          <button type="button" onClick$={startUpdate}>
+            Erneut versuchen
+          </button>
+        </div>
       )}
     </div>
   );

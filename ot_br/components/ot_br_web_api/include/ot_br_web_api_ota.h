@@ -2,6 +2,10 @@
 
 #include "esp_err.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
     OTA_STATE_IDLE,
     OTA_STATE_IN_PROGRESS,
@@ -16,3 +20,9 @@ const char *ot_br_ota_get_error();
 
 // Call after successful boot to disable rollback protection
 void ot_br_ota_mark_valid();
+
+int ot_br_ota_get_last_http_status(void);
+
+#ifdef __cplusplus
+}
+#endif
