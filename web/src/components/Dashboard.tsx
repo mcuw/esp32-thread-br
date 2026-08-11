@@ -1,5 +1,6 @@
 import { $, component$, useSignal, useVisibleTask$ } from '@qwik.dev/core';
 import { apiGet } from '../lib/api';
+import CommissionerPanel from './CommissionerPanel';
 import DeviceInfo from './DeviceInfo';
 import NeighborList from './NeighborList';
 import OtaBanner from './OtaBanner';
@@ -55,6 +56,7 @@ export default component$(() => {
         <OtaBanner />
         <DeviceInfo />
         <NeighborList />
+        <CommissionerPanel />
       </div>
     );
   }
