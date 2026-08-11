@@ -185,4 +185,18 @@ const { title } = Astro.props;
   button:hover {
     opacity: 0.9;
   }
+
+  .progress-bar {
+    background: var(--surface-hover);
+    border-radius: 4px;
+    height: 8px;
+    overflow: hidden;
+    margin-top: 0.5rem;
+  }
+
+  .progress-fill {
+    background: var(--accent);
+    height: 100%;
+    transition: width 0.3s ease;
+  }
 </style>
