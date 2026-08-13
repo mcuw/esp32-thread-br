@@ -49,6 +49,9 @@ export default component$(() => {
         !a.name.includes('partition'),
     );
     if (!asset) {
+      updateState.value = 'error';
+      lastError.value =
+        'Firmware is currently being built on GitHub - please try again in a few minutes.';
       return;
     }
 
@@ -103,6 +106,12 @@ export default component$(() => {
   const isNewer =
     latestRelease.value &&
     latestRelease.value.tag_name !== currentVersion.value;
+  const assetReady = latestRelease.value?.assets.some(
+    (a) =>
+      a.name.endsWith('.bin') &&
+      !a.name.includes('bootloader') &&
+      !a.name.includes('partition'),
+  );
 
   if (!isNewer && updateState.value === 'idle') {
     return null;
@@ -113,17 +122,22 @@ export default component$(() => {
       {isNewer && updateState.value === 'idle' && (
         <>
           <p>
-            Update verfügbar: <strong>{latestRelease.value?.tag_name}</strong>{' '}
-            (aktuell: {currentVersion.value})
+            Update is available:{' '}
+            <strong>{latestRelease.value?.tag_name}</strong> (current:{' '}
+            {currentVersion.value})
           </p>
-          <button type="button" onClick$={startUpdate}>
-            Jetzt aktualisieren
-          </button>
+          {assetReady ? (
+            <button type="button" onClick$={startUpdate}>
+              Update now
+            </button>
+          ) : (
+            <p class="muted">Firmware is still being built, please wait...</p>
+          )}
         </>
       )}
       {updateState.value === 'updating' && (
         <div>
-          <p>Update läuft... {progress.value}%</p>
+          <p>Update is running... {progress.value}%</p>
           <div class="progress-bar">
             <div
               class="progress-fill"
@@ -139,7 +153,7 @@ export default component$(() => {
         <div>
           <p class="error">Failed to update firmware: {lastError.value}</p>
           <button type="button" onClick$={startUpdate}>
-            Erneut versuchen
+            Retry
           </button>
         </div>
       )}
