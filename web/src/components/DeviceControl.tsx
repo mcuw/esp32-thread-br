@@ -17,7 +17,7 @@ export default component$(() => {
 
   const sendCommand = $(async (command: string) => {
     if (!selectedAddress.value) {
-      message.value = 'Bitte zuerst ein Gerät auswählen';
+      message.value = 'Please select a device first';
       return;
     }
     const token = localStorage.getItem('ot_br_setup_token') ?? '';
@@ -27,9 +27,9 @@ export default component$(() => {
         address: selectedAddress.value,
         command,
       });
-      message.value = `"${command}" gesendet`;
+      message.value = `"${command}" sent to ${selectedAddress.value}`;
     } catch (e) {
-      message.value = e instanceof Error ? e.message : 'Fehler beim Senden';
+      message.value = e instanceof Error ? e.message : 'Failed to send command';
     } finally {
       sending.value = false;
     }
@@ -37,9 +37,9 @@ export default component$(() => {
 
   return (
     <div class="card">
-      <h2>Gerätesteuerung</h2>
+      <h2>Device control</h2>
       {neighbors.value.length === 0 ? (
-        <p class="muted">Keine Geräte im Netzwerk gefunden.</p>
+        <p class="muted">No devices found in the network.</p>
       ) : (
         <>
           <select
@@ -47,7 +47,7 @@ export default component$(() => {
               selectedAddress.value = (e.target as HTMLSelectElement).value;
             }}
           >
-            <option value="">Gerät wählen...</option>
+            <option value="">Select device...</option>
             {neighbors.value.map((n) => (
               <option
                 key={n.ext_mac}
@@ -62,21 +62,21 @@ export default component$(() => {
               onClick$={() => sendCommand('TOGGLE')}
               disabled={sending.value}
             >
-              Umschalten
+              Toggle
             </button>
             <button
               type="button"
               onClick$={() => sendCommand('LED_ON')}
               disabled={sending.value}
             >
-              An
+              On
             </button>
             <button
               type="button"
               onClick$={() => sendCommand('LED_OFF')}
               disabled={sending.value}
             >
-              Aus
+              Off
             </button>
           </div>
         </>
