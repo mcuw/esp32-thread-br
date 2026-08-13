@@ -14,6 +14,7 @@
 
 // API
 #include "ot_br_web_api.h"
+
 // OTA
 #include "ot_br_web_api_ota.h"
 #include "esp_ota_ops.h"
@@ -21,13 +22,19 @@
 // Setup Token
 #include "ot_br_web_api_setup_mode.h"
 
+// Command for automatization
+#include "ot_br_web_api_command.h"
+
+
+#include "ot_br_web_api_internal.h"
+
 // static const char *TAG = "ot_br_web_handlers";
 
 extern bool ot_br_web_api_check_auth(httpd_req_t *req);
 
 // -------- Helpers --------
 
-static void send_json(httpd_req_t *req, cJSON *json)
+void send_json(httpd_req_t *req, cJSON *json)
 {
     char *out = cJSON_PrintUnformatted(json);
     httpd_resp_set_type(req, "application/json");
@@ -36,7 +43,7 @@ static void send_json(httpd_req_t *req, cJSON *json)
     cJSON_Delete(json);
 }
 
-static void send_json_error(httpd_req_t *req, const char *status, const char *msg)
+void send_json_error(httpd_req_t *req, const char *status, const char *msg)
 {
     httpd_resp_set_status(req, status);
     cJSON *j = cJSON_CreateObject();
@@ -44,7 +51,7 @@ static void send_json_error(httpd_req_t *req, const char *status, const char *ms
     send_json(req, j);
 }
 
-static char *read_body(httpd_req_t *req)
+char *read_body(httpd_req_t *req)
 {
     if (req->content_len <= 0 || req->content_len > 2048) {
         return NULL;
@@ -310,6 +317,11 @@ static esp_err_t thread_neighbors_handler(httpd_req_t *req)
     while (otThreadGetNextNeighborInfo(instance, &iter, &info) == OT_ERROR_NONE) {
         cJSON *n = cJSON_CreateObject();
         cJSON_AddNumberToObject(n, "rloc16", info.mRloc16);
+
+        char rloc_addr[48];
+        ot_br_command_build_rloc_address(info.mRloc16, rloc_addr, sizeof(rloc_addr));
+        cJSON_AddStringToObject(n, "rloc_address", rloc_addr);
+
         char ext_mac[17];
         hex_encode(info.mExtAddress.m8, 8, ext_mac);
         cJSON_AddStringToObject(n, "ext_mac", ext_mac);
@@ -547,6 +559,8 @@ void ot_br_web_api_register_handlers(httpd_handle_t server)
         { "/api/setup/status",   HTTP_GET,  setup_status_handler,   NULL },
         { "/api/setup/token",    HTTP_GET,  setup_token_handler,    NULL },
         { "/api/setup/complete", HTTP_POST, setup_complete_handler, NULL },
+        // Command for automatization
+        { "/api/thread/send-command", HTTP_POST, ot_br_command_send_handler, NULL },
     };
 
     for (size_t i = 0; i < sizeof(uris) / sizeof(uris[0]); i++) {

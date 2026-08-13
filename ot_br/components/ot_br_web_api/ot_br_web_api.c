@@ -2,12 +2,16 @@
 #include "esp_log.h"
 #include "ot_br_web_api.h"
 
+// Command for automatization
+#include "ot_br_web_api_command.h"
+
 static const char *TAG = "ot_br_web_api";
 
 
 esp_err_t ot_br_web_api_start(otInstance *instance)
 {
     ot_br_web_api_auth_init();
+    ot_br_command_init();
 
     esp_err_t err = ot_br_web_api_mount_littlefs();
     if (err != ESP_OK) {
