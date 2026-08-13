@@ -69,6 +69,20 @@ export default component$(() => {
         if (status.state === 'success') {
           clearInterval(poll);
           updateState.value = 'done';
+
+          // Nach dem Neustart des Geraets automatisch die Seite neu laden,
+          // sobald es wieder erreichbar ist
+          setTimeout(() => {
+            const retryReload = setInterval(async () => {
+              try {
+                await apiGet<OtaStatus>('/ota/status');
+                clearInterval(retryReload);
+                location.reload();
+              } catch {
+                // Geraet noch nicht wieder erreichbar - weiter versuchen
+              }
+            }, 2000);
+          }, 3000); // 3 Sek. initiale Wartezeit, bis das Geraet wirklich neu startet
         } else if (status.state === 'failed') {
           clearInterval(poll);
           updateState.value = 'error';
