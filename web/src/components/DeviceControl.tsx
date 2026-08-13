@@ -49,9 +49,11 @@ export default component$(() => {
           >
             <option value="">Gerät wählen...</option>
             {neighbors.value.map((n) => (
-              <option key={n.ext_mac} value={n.rloc_address}>
-                {n.ext_mac} ({n.is_child ? 'Child' : 'Router'})
-              </option>
+              <option
+                key={n.ext_mac}
+                value={n.rloc_address}
+                label={`${n.ext_mac} (${n.is_child ? 'Child' : 'Router'})`}
+              />
             ))}
           </select>
           <div class="button-row">
