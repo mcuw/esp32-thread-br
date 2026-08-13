@@ -49,6 +49,9 @@ export default component$(() => {
         !a.name.includes('partition'),
     );
     if (!asset) {
+      updateState.value = 'error';
+      lastError.value =
+        'Firmware is currently being built on GitHub - please try again in a few minutes.';
       return;
     }
 
