@@ -14,6 +14,9 @@ void ot_br_command_build_rloc_address(uint16_t rloc16, char *out, size_t out_len
 
 esp_err_t ot_br_command_send_handler(httpd_req_t *req);
 
+// CoAP Light Control
+esp_err_t ot_br_coap_light_handler(httpd_req_t *req);
+
 #ifdef __cplusplus
 }
 #endif
