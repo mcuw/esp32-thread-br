@@ -13,6 +13,17 @@ export default component$(() => {
 
   useVisibleTask$(async () => {
     neighbors.value = await apiGet<NeighborWithAddr[]>('/thread/neighbors');
+
+    const fetchNeighbors = async () => {
+      try {
+        neighbors.value = await apiGet<NeighborWithAddr[]>('/thread/neighbors');
+      } catch (e) {
+        console.error('Neighbor-Fetch fehlgeschlagen:', e);
+      }
+    };
+    fetchNeighbors();
+    const interval = setInterval(fetchNeighbors, 5000);
+    return () => clearInterval(interval);
   });
 
   const setLight = $(async (on: boolean) => {
