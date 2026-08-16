@@ -1,4 +1,5 @@
 #include <string.h>
+#include "openthread/coap.h"
 #include "openthread/udp.h"
 #include "openthread/ip6.h"
 #include "openthread/thread.h"
@@ -11,6 +12,8 @@
 #include "ot_br_web_api_auth.h"
 
 #include "ot_br_web_api_internal.h"
+
+#include "ot_br_web_api_coap_client.h"
 
 static const char *TAG = "ot_br_command";
 #define COMMAND_PORT 12345
@@ -133,6 +136,165 @@ esp_err_t ot_br_command_send_handler(httpd_req_t *req)
 
     cJSON *j = cJSON_CreateObject();
     cJSON_AddBoolToObject(j, "success", true);
+    send_json(req, j);
+    return ESP_OK;
+}
+
+esp_err_t ot_br_coap_light_handler(httpd_req_t *req)
+{
+    if (!ot_br_web_api_check_auth(req)) return ESP_OK;
+
+    char *body = read_body(req);
+    if (!body) {
+        send_json_error(req, "400 Bad Request", "missing body");
+        return ESP_OK;
+    }
+    cJSON *json = cJSON_Parse(body);
+    free(body);
+    if (!json) {
+        send_json_error(req, "400 Bad Request", "invalid JSON");
+        return ESP_OK;
+    }
+
+    cJSON *addr_item = cJSON_GetObjectItem(json, "address");
+    cJSON *on_item = cJSON_GetObjectItem(json, "on");
+    cJSON *r_item = cJSON_GetObjectItem(json, "r");
+    cJSON *g_item = cJSON_GetObjectItem(json, "g");
+    cJSON *b_item = cJSON_GetObjectItem(json, "b");
+
+    if (!cJSON_IsString(addr_item)) {
+        cJSON_Delete(json);
+        send_json_error(req, "400 Bad Request", "address required");
+        return ESP_OK;
+    }
+
+    bool on = cJSON_IsBool(on_item) ? cJSON_IsTrue(on_item) : true;
+    uint8_t r = cJSON_IsNumber(r_item) ? (uint8_t)r_item->valueint : 255;
+    uint8_t g = cJSON_IsNumber(g_item) ? (uint8_t)g_item->valueint : 255;
+    uint8_t b = cJSON_IsNumber(b_item) ? (uint8_t)b_item->valueint : 255;
+    char address[48];
+    strncpy(address, addr_item->valuestring, sizeof(address) - 1);
+    address[sizeof(address) - 1] = '\0';
+
+    cJSON_Delete(json);
+
+    char resolved_address[48];
+    esp_err_t resolve_err = ot_br_resolve_omr_address(address, resolved_address, sizeof(resolved_address));
+
+    const char *target = (resolve_err == ESP_OK) ? resolved_address : address;  // Fallback auf RLOC
+    esp_err_t err = ot_br_coap_light_set(target, on, r, g, b);  
+
+    // When the first request fails with a timeout
+    // try again with a fresh resolved address (re-joined device may have a new RLOC)
+    if (err == ESP_ERR_TIMEOUT) {
+        ESP_LOGW(TAG, "First CoAP attempt failed (Timeout), retrying with a fresh address...");
+        char retry_address[48];
+        esp_err_t retry_resolve = ot_br_resolve_omr_address(address, retry_address, sizeof(retry_address));
+        const char *retry_target = (retry_resolve == ESP_OK) ? retry_address : address;
+        err = ot_br_coap_light_set(retry_target, on, r, g, b);
+    }
+
+    if (err != ESP_OK) {
+        const char *msg = (err == ESP_ERR_TIMEOUT) ? "Device does not respond (Timeout)" : "CoAP-Request failed";
+        send_json_error(req, "504 Gateway Timeout", msg);
+        return ESP_OK;
+    }
+
+    cJSON *j = cJSON_CreateObject();
+    cJSON_AddBoolToObject(j, "success", true);
+    send_json(req, j);
+    return ESP_OK;
+}
+
+//
+// CoAP-Testing-Command
+// 
+
+static otCoapCode method_from_string(const char *m)
+{
+    if (strcmp(m, "GET") == 0) return OT_COAP_CODE_GET;
+    if (strcmp(m, "PUT") == 0) return OT_COAP_CODE_PUT;
+    if (strcmp(m, "POST") == 0) return OT_COAP_CODE_POST;
+    if (strcmp(m, "DELETE") == 0) return OT_COAP_CODE_DELETE;
+    return OT_COAP_CODE_GET;
+}
+
+// POST /api/thread/coap-request
+// Body: {"address":"...", "method":"GET|PUT|POST|DELETE", "path":"light", "payload":"{...}"}
+esp_err_t ot_br_coap_generic_handler(httpd_req_t *req)
+{
+    if (!ot_br_web_api_check_auth(req)) return ESP_OK;
+
+    char *body = read_body(req);
+    if (!body) {
+        send_json_error(req, "400 Bad Request", "missing body");
+        return ESP_OK;
+    }
+    cJSON *json = cJSON_Parse(body);
+    free(body);
+    if (!json) {
+        send_json_error(req, "400 Bad Request", "invalid JSON");
+        return ESP_OK;
+    }
+
+    cJSON *addr_item = cJSON_GetObjectItem(json, "address");
+    cJSON *method_item = cJSON_GetObjectItem(json, "method");
+    cJSON *path_item = cJSON_GetObjectItem(json, "path");
+    cJSON *payload_item = cJSON_GetObjectItem(json, "payload");
+
+    if (!cJSON_IsString(addr_item) || !cJSON_IsString(path_item)) {
+        cJSON_Delete(json);
+        send_json_error(req, "400 Bad Request", "address and path required");
+        return ESP_OK;
+    }
+
+    char address[48];
+    strncpy(address, addr_item->valuestring, sizeof(address) - 1);
+    address[sizeof(address) - 1] = '\0';
+
+    char path[64];
+    strncpy(path, path_item->valuestring, sizeof(path) - 1);
+    path[sizeof(path) - 1] = '\0';
+
+    otCoapCode method = cJSON_IsString(method_item)
+        ? method_from_string(method_item->valuestring) : OT_COAP_CODE_GET;
+
+    char payload[256] = {0};
+    if (cJSON_IsString(payload_item)) {
+        strncpy(payload, payload_item->valuestring, sizeof(payload) - 1);
+    }
+    cJSON_Delete(json);
+
+    // Adresse ueber OMR aufloesen, mit RLOC-Fallback (wie bei /coap-light)
+    char resolved_address[48];
+    esp_err_t resolve_err = ot_br_resolve_omr_address(address, resolved_address, sizeof(resolved_address));
+    const char *target = (resolve_err == ESP_OK) ? resolved_address : address;
+
+    ot_br_coap_response_t response;
+    esp_err_t err = ot_br_coap_generic_request(target, method, path, payload, &response);
+
+    // When the first request fails with a timeout
+    // try again with a fresh resolved address (re-joined device may have a new RLOC)
+    if (err == ESP_ERR_TIMEOUT) {
+        ESP_LOGW(TAG, "First try failed, attempting again with a fresh address...");
+        char retry_address[48];
+        esp_err_t retry_resolve = ot_br_resolve_omr_address(address, retry_address, sizeof(retry_address));
+        const char *retry_target = (retry_resolve == ESP_OK) ? retry_address : address;
+        err = ot_br_coap_generic_request(retry_target, method, path, payload, &response);
+    }
+
+    if (err != ESP_OK) {
+        const char *msg = (err == ESP_ERR_TIMEOUT) ? "Device not responding (Timeout)" : "CoAP request failed";
+        send_json_error(req, "504 Gateway Timeout", msg);
+        return ESP_OK;
+    }
+
+    cJSON *j = cJSON_CreateObject();
+    cJSON_AddBoolToObject(j, "success", true);
+    cJSON_AddNumberToObject(j, "code", response.code);
+    if (response.has_payload) {
+        cJSON_AddStringToObject(j, "payload", response.payload);
+    }
     send_json(req, j);
     return ESP_OK;
 }

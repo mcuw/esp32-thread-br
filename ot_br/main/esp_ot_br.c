@@ -50,6 +50,9 @@
 // Setup Token
 #include "ot_br_web_api_setup_mode.h"
 
+// CoAP Light Control
+#include "ot_br_web_api_coap_client.h"
+
 #if CONFIG_OPENTHREAD_STATE_INDICATOR_ENABLE
 #include "ot_led_strip.h"
 #endif
@@ -137,6 +140,9 @@ void app_main()
     };
 
     ESP_ERROR_CHECK(esp_openthread_start(&config));
+
+    ot_br_coap_client_init(); 
+
 #if CONFIG_OPENTHREAD_CLI_ESP_EXTENSION
     esp_cli_custom_command_init();
 #endif

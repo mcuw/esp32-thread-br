@@ -136,6 +136,20 @@ const { title } = Astro.props;
     border-bottom: 1px solid var(--border);
   }
 
+  textarea {
+    width: 100%;
+    min-height: 80px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.5rem;
+    color: var(--text);
+    font-family: monospace;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+  }
+
+
   .muted {
     color: var(--text-muted);
     font-size: 0.8rem;
@@ -198,5 +212,20 @@ const { title } = Astro.props;
     background: var(--accent);
     height: 100%;
     transition: width 0.3s ease;
+  }
+
+  .coap-form-row {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .coap-response {
+    background: var(--surface-hover);
+    padding: 0.75rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    white-space: pre-wrap;
+    word-break: break-all;
+    margin-top: 0.75rem;
   }
 </style>

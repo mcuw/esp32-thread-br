@@ -1,7 +1,8 @@
 import { $, component$, useSignal, useVisibleTask$ } from '@qwik.dev/core';
 import { apiGet } from '../lib/api';
+import CoapLightControl from './CoapLightControl';
+import CoapTester from './CoapTester';
 import CommissionerPanel from './CommissionerPanel';
-import DeviceControl from './DeviceControl';
 import DeviceInfo from './DeviceInfo';
 import NeighborList from './NeighborList';
 import OtaBanner from './OtaBanner';
@@ -58,7 +59,8 @@ export default component$(() => {
         <DeviceInfo />
         <NeighborList />
         <CommissionerPanel />
-        <DeviceControl />
+        <CoapTester />
+        <CoapLightControl />
       </div>
     );
   }
