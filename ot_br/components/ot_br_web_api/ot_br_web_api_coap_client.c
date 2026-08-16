@@ -17,6 +17,15 @@ static otCoapCode s_last_response_code = 0;
 static SemaphoreHandle_t s_diag_sem = NULL;
 static char s_resolved_omr[48] = {0};
 
+// CoAP-Testing
+typedef struct {
+    otCoapCode code;
+    char payload[256];
+    bool has_payload;
+} ot_br_coap_response_t;
+static ot_br_coap_response_t s_generic_response;
+
+
 static void coap_response_handler(void *ctx, otMessage *message,
                                    const otMessageInfo *info, otError result)
 {
@@ -163,5 +172,88 @@ esp_err_t ot_br_resolve_omr_address(const char *rloc_address_str, char *out, siz
 
     strncpy(out, s_resolved_omr, out_len - 1);
     out[out_len - 1] = '\0';
+    return ESP_OK;
+}
+
+//
+// CoAP-Testing
+//
+static void generic_response_handler(void *ctx, otMessage *message,
+                                      const otMessageInfo *info, otError result)
+{
+    if (result == OT_ERROR_NONE && message) {
+        s_generic_response.code = otCoapMessageGetCode(message);
+        uint16_t offset = otMessageGetOffset(message);
+        uint16_t length = otMessageGetLength(message) - offset;
+        if (length > 0 && length < sizeof(s_generic_response.payload)) {
+            otMessageRead(message, offset, s_generic_response.payload, length);
+            s_generic_response.payload[length] = '\0';
+            s_generic_response.has_payload = true;
+        } else {
+            s_generic_response.has_payload = false;
+        }
+    } else {
+        s_generic_response.code = 0;
+        s_generic_response.has_payload = false;
+    }
+    xSemaphoreGive(s_response_sem);
+}
+
+esp_err_t ot_br_coap_generic_request(const char *address_str, otCoapCode method,
+                                      const char *uri_path, const char *payload,
+                                      ot_br_coap_response_t *out_response)
+{
+    otInstance *instance = esp_openthread_get_instance();
+    xSemaphoreTake(s_response_sem, 0);
+
+    esp_openthread_lock_acquire(portMAX_DELAY);
+
+    otMessage *message = otCoapNewMessage(instance, NULL);
+    if (!message) {
+        esp_openthread_lock_release();
+        return ESP_ERR_NO_MEM;
+    }
+
+    otCoapType type = OT_COAP_TYPE_CONFIRMABLE;
+    otCoapMessageInit(message, type, method);
+    otCoapMessageGenerateToken(message, OT_COAP_DEFAULT_TOKEN_LENGTH);
+    otCoapMessageAppendUriPathOptions(message, uri_path);
+
+    if (payload && strlen(payload) > 0 &&
+        (method == OT_COAP_CODE_PUT || method == OT_COAP_CODE_POST)) {
+        otCoapMessageAppendContentFormatOption(message, OT_COAP_OPTION_CONTENT_FORMAT_JSON);
+        otCoapMessageSetPayloadMarker(message);
+        otMessageAppend(message, payload, strlen(payload));
+    }
+
+    otMessageInfo msgInfo;
+    memset(&msgInfo, 0, sizeof(msgInfo));
+    otError addr_err = otIp6AddressFromString(address_str, &msgInfo.mPeerAddr);
+    if (addr_err != OT_ERROR_NONE) {
+        otMessageFree(message);
+        esp_openthread_lock_release();
+        return ESP_ERR_INVALID_ARG;
+    }
+    msgInfo.mPeerPort = OT_DEFAULT_COAP_PORT;
+
+    otCoapTxParameters tx_params = {
+        .mAckTimeout = 2000,
+        .mAckRandomFactorNumerator = 3,
+        .mAckRandomFactorDenominator = 2,
+        .mMaxRetransmit = 2,
+    };
+
+    otError err = otCoapSendRequestWithParameters(instance, message, &msgInfo,
+                                                    generic_response_handler, NULL, &tx_params);
+    esp_openthread_lock_release();
+
+    if (err != OT_ERROR_NONE) {
+        return ESP_FAIL;
+    }
+    if (xSemaphoreTake(s_response_sem, pdMS_TO_TICKS(8000)) != pdTRUE) {
+        return ESP_ERR_TIMEOUT;
+    }
+
+    *out_response = s_generic_response;
     return ESP_OK;
 }

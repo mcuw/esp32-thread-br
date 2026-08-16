@@ -26,6 +26,9 @@ esp_err_t ot_br_web_api_mount_littlefs(void);
 // web: register static handler to deliver the UI (after all other handlers)
 void ot_br_web_api_register_static_handler(httpd_handle_t server);
 
+// CoAP Testing handler (POST /api/thread/coap-request)
+esp_err_t ot_br_coap_generic_handler(httpd_req_t *req);
+
 #ifdef __cplusplus
 }
 #endif

@@ -565,6 +565,8 @@ void ot_br_web_api_register_handlers(httpd_handle_t server)
         { "/api/thread/send-command", HTTP_POST, ot_br_command_send_handler, NULL },
         // CoAP Light Control
         { "/api/thread/coap-light", HTTP_POST, ot_br_coap_light_handler, NULL },
+        // CoAP-Testing-Command
+        { "/api/thread/coap-request", HTTP_POST, ot_br_coap_generic_handler, NULL },
     };
 
     for (size_t i = 0; i < sizeof(uris) / sizeof(uris[0]); i++) {
