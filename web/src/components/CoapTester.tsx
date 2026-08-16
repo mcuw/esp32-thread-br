@@ -12,12 +12,11 @@ export default component$(() => {
   const selectedExtMac = useSignal('');
   const method = useSignal<CoapMethod>('GET');
   const path = useSignal('light');
-  const payload = useSignal('');
+  const payload = useSignal('{"on":true,"r":0,"g":255,"b":0}');
   const response = useSignal('');
   const sending = useSignal(false);
 
   useVisibleTask$(() => {
-    payload.value = '{"on":true,"r":0,"g":255,"b":0}';
     const fetchNeighbors = async () => {
       try {
         neighbors.value = await apiGet<NeighborWithAddr[]>('/thread/neighbors');
@@ -113,11 +112,12 @@ export default component$(() => {
       {(method.value === 'PUT' || method.value === 'POST') && (
         <textarea
           placeholder='JSON-Payload, z.B. {"on":true,"r":255,"g":0,"b":0}'
-          value={payload.value}
           onInput$={(e) => {
             payload.value = (e.target as HTMLTextAreaElement).value;
           }}
-        />
+        >
+          {payload.value}
+        </textarea>
       )}
 
       <button type="button" onClick$={sendRequest} disabled={sending.value}>
