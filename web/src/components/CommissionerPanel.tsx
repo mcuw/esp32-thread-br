@@ -43,7 +43,7 @@ export default component$(() => {
           onClick$={startCommissioner}
           disabled={status.value === 'starting'}
         >
-          {status.value === 'starting' ? 'Starte...' : 'Commissioner starten'}
+          {status.value === 'starting' ? 'Starting...' : 'Start Commissioner'}
         </button>
       )}
       {status.value === 'active' && (

@@ -184,6 +184,16 @@ esp_err_t ot_br_coap_light_handler(httpd_req_t *req)
     const char *target = (resolve_err == ESP_OK) ? resolved_address : address;  // Fallback auf RLOC
     esp_err_t err = ot_br_coap_light_set(target, on, r, g, b);  
 
+    // When the first request fails with a timeout
+    // try again with a fresh resolved address (re-joined device may have a new RLOC)
+    if (err == ESP_ERR_TIMEOUT) {
+        ESP_LOGW(TAG, "First CoAP attempt failed (Timeout), retrying with a fresh address...");
+        char retry_address[48];
+        esp_err_t retry_resolve = ot_br_resolve_omr_address(address, retry_address, sizeof(retry_address));
+        const char *retry_target = (retry_resolve == ESP_OK) ? retry_address : address;
+        err = ot_br_coap_light_set(retry_target, on, r, g, b);
+    }
+
     if (err != ESP_OK) {
         const char *msg = (err == ESP_ERR_TIMEOUT) ? "Device does not respond (Timeout)" : "CoAP-Request failed";
         send_json_error(req, "504 Gateway Timeout", msg);
@@ -263,8 +273,18 @@ esp_err_t ot_br_coap_generic_handler(httpd_req_t *req)
     ot_br_coap_response_t response;
     esp_err_t err = ot_br_coap_generic_request(target, method, path, payload, &response);
 
+    // When the first request fails with a timeout
+    // try again with a fresh resolved address (re-joined device may have a new RLOC)
+    if (err == ESP_ERR_TIMEOUT) {
+        ESP_LOGW(TAG, "First try failed, attempting again with a fresh address...");
+        char retry_address[48];
+        esp_err_t retry_resolve = ot_br_resolve_omr_address(address, retry_address, sizeof(retry_address));
+        const char *retry_target = (retry_resolve == ESP_OK) ? retry_address : address;
+        err = ot_br_coap_generic_request(retry_target, method, path, payload, &response);
+    }
+
     if (err != ESP_OK) {
-        const char *msg = (err == ESP_ERR_TIMEOUT) ? "Geraet antwortet nicht (Timeout)" : "CoAP-Request fehlgeschlagen";
+        const char *msg = (err == ESP_ERR_TIMEOUT) ? "Device not responding (Timeout)" : "CoAP request failed";
         send_json_error(req, "504 Gateway Timeout", msg);
         return ESP_OK;
     }

@@ -31,7 +31,7 @@ export default component$(() => {
 
   const sendRequest = $(async () => {
     if (!selectedExtMac.value) {
-      response.value = 'Bitte Gerät auswählen';
+      response.value = 'Please select a device';
       return;
     }
 
@@ -41,13 +41,14 @@ export default component$(() => {
       (n) => n.ext_mac === selectedExtMac.value,
     );
     if (!target) {
-      response.value = 'Gerät nicht mehr im Netzwerk gefunden';
+      response.value = 'Device not found in the network';
       return;
     }
 
     const token = localStorage.getItem('ot_br_setup_token') ?? '';
     sending.value = true;
-    response.value = 'Sende...';
+    response.value =
+      'Sending (can take a moment during network synchronization)...';
 
     try {
       const result = await apiPost<{
@@ -80,7 +81,7 @@ export default component$(() => {
           selectedExtMac.value = (e.target as HTMLSelectElement).value;
         }}
       >
-        <option value="">Gerät wählen...</option>
+        <option value="">Select Device...</option>
         {neighbors.value.map((n) => (
           <option key={n.ext_mac} value={n.ext_mac}>
             {n.ext_mac}
@@ -101,7 +102,7 @@ export default component$(() => {
         </select>
         <input
           type="text"
-          placeholder="Pfad (z.B. light)"
+          placeholder="Path (e.g. light)"
           value={path.value}
           onInput$={(e) => {
             path.value = (e.target as HTMLInputElement).value;
@@ -121,7 +122,7 @@ export default component$(() => {
       )}
 
       <button type="button" onClick$={sendRequest} disabled={sending.value}>
-        {sending.value ? 'Sende...' : 'Request senden'}
+        {sending.value ? 'Sending...' : 'Send Request'}
       </button>
 
       {response.value && <pre class="coap-response">{response.value}</pre>}
