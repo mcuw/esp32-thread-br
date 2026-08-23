@@ -62,6 +62,12 @@ cd ../ot_br && idf.py build flash monitor
 
 4. Browser: (Hard-) Reload
 
+open
+
+```sh
+http://esp-ot-br.local
+```
+
 ## Supported Hardware Platforms
 
 ### Single SoC Module

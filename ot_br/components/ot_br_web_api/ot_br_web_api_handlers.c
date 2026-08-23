@@ -349,6 +349,13 @@ static esp_err_t commissioner_start_handler(httpd_req_t *req)
     otInstance *instance = otInstanceInitSingle();
 
     esp_openthread_lock_acquire(portMAX_DELAY);
+
+    // Workaround for known ESP-IDF-Bug (Issue #18075): After a
+    // Reboot the Commissioner-state can be "stale" which conflicts
+    // with the Discovery-Request-Execution. A clean stop before start
+    // fix that.
+    otCommissionerStop(instance);  // Fehler ignorieren, falls eh schon gestoppt
+
     otError err = otCommissionerStart(instance, NULL, NULL, NULL);
     esp_openthread_lock_release();
 
