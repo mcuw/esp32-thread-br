@@ -62,6 +62,12 @@ cd ../ot_br && idf.py build flash monitor
 
 4. Browser: (Hard-) Reload
 
+open
+
+```sh
+http://esp-ot-br.local
+```
+
 ## Supported Hardware Platforms
 
 ### Single SoC Module
@@ -73,3 +79,17 @@ cd ../ot_br && idf.py build flash monitor
 (- ESP32-P4 with Radio Co-Processor (RCP) e.g. ESP32-C6, ESP32-H2, ESP32-C5 - not tested)
 
 (- ESP Thread Border Router - ESP32-S3 with ESP32-H2 - not tested)
+
+## Known Issues
+
+### auto joining is not working on border router side
+
+We are currently using the preview (master-branch) of the IDF.
+
+Click on the "Open commissioning" on the UI is not working when e.g. a ESP32-C6 node called a factoryreset.
+
+Workaround: run commissioner on ESP2-S31 to open for the auto_joiner:
+
+```
+ot commissioner joiner add "*" J01NME
+```
