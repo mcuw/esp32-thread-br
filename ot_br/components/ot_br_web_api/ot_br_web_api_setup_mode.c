@@ -3,14 +3,35 @@
 #include "freertos/task.h"
 #include "esp_timer.h"
 #include "esp_log.h"
+#include "esp_openthread.h"
+#include "esp_openthread_lock.h"
+#include "openthread/commissioner.h"
 
 static const char *TAG = "ot_br_setup_mode";
-#define BUTTON_GPIO GPIO_NUM_61        // BOOT-Taste
+#define BUTTON_GPIO GPIO_NUM_61        // BOOT-button
 #define LONG_PRESS_MS 3000
-#define SETUP_WINDOW_MS (10 * 60 * 1000)  // 10 Minuten Zeitfenster
+#define SETUP_WINDOW_MS (10 * 60 * 1000)  // 10 minutes timeframe
+
+#define JOINER_PSKD "J01NME" // have to be the same as in auto_joiner.c and CommissionerPanel.tsx
 
 static volatile bool s_setup_mode_active = false;
 static int64_t s_setup_mode_started_at = 0;
+
+
+static void auto_open_commissioning(void)
+{
+    otInstance *instance = esp_openthread_get_instance();
+    esp_openthread_lock_acquire(portMAX_DELAY);
+    otCommissionerStop(instance);
+    otError err = otCommissionerStart(instance, NULL, NULL, NULL);
+    if (err == OT_ERROR_NONE) {
+        // Timeout = 600s (10 Minuten) - deckt exakt das Setup-Fenster ab,
+        // kein periodisches Nachtragen noetig
+        otCommissionerAddJoiner(instance, NULL, JOINER_PSKD, 600);
+        ESP_LOGI(TAG, "Open commissioning automatically for 10 minutes");
+    }
+    esp_openthread_lock_release();
+}
 
 static void button_task(void *arg)
 {
@@ -25,12 +46,12 @@ static void button_task(void *arg)
     bool was_pressed = false;
 
     while (1) {
-        // uncomment for debug button state
+        // uncomment for debug the button state
         //
         // static int64_t last_log = 0;
         // int64_t now = esp_timer_get_time() / 1000;
         // if (now - last_log > 1000) {
-        //     ESP_LOGI(TAG, "GPIO0 Pegel: %d", gpio_get_level(BUTTON_GPIO));
+        //     ESP_LOGD(TAG, "GPIO0 state: %d", gpio_get_level(BUTTON_GPIO));
         //     last_log = now;
         // }
 
@@ -43,7 +64,10 @@ static void button_task(void *arg)
             if (held_ms >= LONG_PRESS_MS && !s_setup_mode_active) {
                 s_setup_mode_active = true;
                 s_setup_mode_started_at = esp_timer_get_time() / 1000;
-                ESP_LOGW(TAG, "=== SETUP-MODUS AKTIVIERT (10 Minuten Zeitfenster) ===");
+                ESP_LOGW(TAG, "=== SETUP-MODUS ACTIVATED (10 minutes timeframe) ===");
+
+                // allow auto commissioning after a reboot with the JOINER_PSKD
+                auto_open_commissioning();
             }
         }
         was_pressed = pressed;

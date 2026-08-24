@@ -7,62 +7,40 @@ export default component$(() => {
   const eui64 = useSignal('*');
   const message = useSignal('');
 
-  const startCommissioner = $(async () => {
+  const openCommissioning = $(async () => {
     const token = localStorage.getItem('ot_br_setup_token') ?? '';
     status.value = 'starting';
     try {
-      await apiPost('/thread/commissioner/start', token);
+      await apiPost('/thread/commissioner/open', token, { pskd: pskd.value });
       status.value = 'active';
-      message.value = 'Commissioner active - Joiner can now join';
+      message.value = `Kommissionierung offen (PSKd: ${pskd.value}) - Gerät kann jetzt beitreten`;
     } catch (e) {
       status.value = 'error';
-      message.value =
-        e instanceof Error ? e.message : 'Error starting commissioner';
-    }
-  });
-
-  const addJoiner = $(async () => {
-    const token = localStorage.getItem('ot_br_setup_token') ?? '';
-    try {
-      await apiPost('/thread/commissioner/joiner', token, {
-        eui64: eui64.value,
-        pskd: pskd.value,
-      });
-      message.value = `Joiner added (PSKd: ${pskd.value}) - 2 minute window`;
-    } catch (e) {
-      message.value = e instanceof Error ? e.message : 'Error adding joiner';
+      message.value = e instanceof Error ? e.message : 'Fehler';
     }
   });
 
   return (
     <div class="card">
       <h2>Join a device</h2>
-      {status.value !== 'active' && (
-        <button
-          type="button"
-          onClick$={startCommissioner}
-          disabled={status.value === 'starting'}
-        >
-          {status.value === 'starting' ? 'Starting...' : 'Start Commissioner'}
-        </button>
-      )}
-      {status.value === 'active' && (
-        <div>
-          <label>
-            Joiner-Passcode (PSKd)
-            <input
-              type="text"
-              value={pskd.value}
-              onInput$={(e) => {
-                pskd.value = (e.target as HTMLInputElement).value;
-              }}
-            />
-          </label>
-          <button type="button" onClick$={addJoiner}>
-            Allow device to join
-          </button>
-        </div>
-      )}
+      <label>
+        Joiner-Passcode (PSKd)
+        <input
+          type="text"
+          value={pskd.value}
+          onInput$={(e) => {
+            pskd.value = (e.target as HTMLInputElement).value;
+          }}
+        />
+      </label>
+      <button
+        type="button"
+        onClick$={openCommissioning}
+        disabled={status.value === 'starting'}
+      >
+        {status.value === 'starting' ? 'Open...' : 'Open Commissioning'}
+      </button>
+
       {message.value && <p class="muted">{message.value}</p>}
     </div>
   );

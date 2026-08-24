@@ -545,6 +545,80 @@ static esp_err_t setup_complete_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+// POST /api/thread/commissioner/open
+// Body: {"pskd": "J01NME"}
+// Fuehrt Stop+Start+Joiner-Add in EINEM atomaren Aufruf aus - verhindert
+// den Reihenfolge-Bug, bei dem eine separate 'commissioner/start'-Aktion
+// eine zuvor gesetzte Joiner-Freigabe wieder loescht.
+static esp_err_t commissioner_open_handler(httpd_req_t *req)
+{
+    if (!ot_br_web_api_check_auth(req)) return ESP_OK;
+
+    char *body = read_body(req);
+    if (!body) {
+        send_json_error(req, "400 Bad Request", "missing body");
+        return ESP_OK;
+    }
+    cJSON *json = cJSON_Parse(body);
+    free(body);
+    if (!json) {
+        send_json_error(req, "400 Bad Request", "invalid JSON");
+        return ESP_OK;
+    }
+
+    cJSON *pskd_item = cJSON_GetObjectItem(json, "pskd");
+    if (!cJSON_IsString(pskd_item)) {
+        cJSON_Delete(json);
+        send_json_error(req, "400 Bad Request", "pskd required");
+        return ESP_OK;
+    }
+
+    char pskd[32];
+    strncpy(pskd, pskd_item->valuestring, sizeof(pskd) - 1);
+    pskd[sizeof(pskd) - 1] = '\0';
+    cJSON_Delete(json);
+
+    otInstance *instance = otInstanceInitSingle();
+
+    esp_openthread_lock_acquire(portMAX_DELAY);
+    // Workaround fuer bekannten ESP-IDF-Bug (Issue #18075):
+    // Stop-vor-Start behebt "Failed to process Discovery Request: Security"
+    otCommissionerStop(instance);
+    otError start_err = otCommissionerStart(instance, NULL, NULL, NULL);
+    esp_openthread_lock_release();
+
+    otError joiner_err = OT_ERROR_INVALID_STATE;
+    if (start_err == OT_ERROR_NONE) {
+        // Commissioner braucht einen Moment fuer den Uebergang
+        // petitioning -> active, bevor AddJoiner erfolgreich sein kann
+        for (int i = 0; i < 20; i++) {  // max. 2 Sekunden warten
+            esp_openthread_lock_acquire(portMAX_DELAY);
+            otCommissionerState state = otCommissionerGetState(instance);
+            esp_openthread_lock_release();
+
+            if (state == OT_COMMISSIONER_STATE_ACTIVE) {
+                break;
+            }
+            vTaskDelay(pdMS_TO_TICKS(100));
+        }
+
+        esp_openthread_lock_acquire(portMAX_DELAY);
+        joiner_err = otCommissionerAddJoiner(instance, NULL, pskd, 0);
+        esp_openthread_lock_release();
+    }
+
+    if (start_err != OT_ERROR_NONE || joiner_err != OT_ERROR_NONE) {
+        char err_msg[80];
+        snprintf(err_msg, sizeof(err_msg), "start_err=%d joiner_err=%d", start_err, joiner_err);
+        send_json_error(req, "500 Internal Server Error", err_msg);
+        return ESP_OK;
+    }
+
+    cJSON *j = cJSON_CreateObject();
+    cJSON_AddBoolToObject(j, "success", true);
+    send_json(req, j);
+    return ESP_OK;
+}
 
 // -------- Registrierung aller URIs --------
 
@@ -574,6 +648,8 @@ void ot_br_web_api_register_handlers(httpd_handle_t server)
         { "/api/thread/coap-light", HTTP_POST, ot_br_coap_light_handler, NULL },
         // CoAP-Testing-Command
         { "/api/thread/coap-request", HTTP_POST, ot_br_coap_generic_handler, NULL },
+        // Commission
+        { "/api/thread/commissioner/open", HTTP_POST, commissioner_open_handler, NULL },
     };
 
     for (size_t i = 0; i < sizeof(uris) / sizeof(uris[0]); i++) {
