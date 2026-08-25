@@ -30,9 +30,11 @@
 // CoAP Light Control
 #include "ot_br_web_api_coap_client.h"
 
-// static const char *TAG = "ot_br_web_handlers";
+static const char *TAG = "ot_br_web_api_handlers";
 
 extern bool ot_br_web_api_check_auth(httpd_req_t *req);
+
+static SemaphoreHandle_t s_commissioner_active_sem = NULL;
 
 // -------- Helpers --------
 
@@ -545,6 +547,14 @@ static esp_err_t setup_complete_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+
+static void commissioner_state_callback(otCommissionerState state, void *context)
+{
+    if (state == OT_COMMISSIONER_STATE_ACTIVE) {
+        xSemaphoreGive(s_commissioner_active_sem);
+    }
+}
+
 // POST /api/thread/commissioner/open
 // Body: {"pskd": "J01NME"}
 // Fuehrt Stop+Start+Joiner-Add in EINEM atomaren Aufruf aus - verhindert
@@ -578,33 +588,28 @@ static esp_err_t commissioner_open_handler(httpd_req_t *req)
     pskd[sizeof(pskd) - 1] = '\0';
     cJSON_Delete(json);
 
+    if (!s_commissioner_active_sem) {
+        s_commissioner_active_sem = xSemaphoreCreateBinary();
+    }
+    xSemaphoreTake(s_commissioner_active_sem, 0);  // evtl. Altsignal verwerfen
+
     otInstance *instance = otInstanceInitSingle();
 
     esp_openthread_lock_acquire(portMAX_DELAY);
-    // Workaround fuer bekannten ESP-IDF-Bug (Issue #18075):
-    // Stop-vor-Start behebt "Failed to process Discovery Request: Security"
     otCommissionerStop(instance);
-    otError start_err = otCommissionerStart(instance, NULL, NULL, NULL);
+    otError start_err = otCommissionerStart(instance, commissioner_state_callback, NULL, NULL);
     esp_openthread_lock_release();
 
     otError joiner_err = OT_ERROR_INVALID_STATE;
     if (start_err == OT_ERROR_NONE) {
-        // Commissioner braucht einen Moment fuer den Uebergang
-        // petitioning -> active, bevor AddJoiner erfolgreich sein kann
-        for (int i = 0; i < 20; i++) {  // max. 2 Sekunden warten
+        // Waiting, until the State-Callback returns ACTIVE instead of Polling
+        if (xSemaphoreTake(s_commissioner_active_sem, pdMS_TO_TICKS(5000)) == pdTRUE) {
             esp_openthread_lock_acquire(portMAX_DELAY);
-            otCommissionerState state = otCommissionerGetState(instance);
+            joiner_err = otCommissionerAddJoiner(instance, NULL, pskd, 600);
             esp_openthread_lock_release();
-
-            if (state == OT_COMMISSIONER_STATE_ACTIVE) {
-                break;
-            }
-            vTaskDelay(pdMS_TO_TICKS(100));
+        } else {
+            ESP_LOGW(TAG, "Timeout while waiting on the ACTIVE-state");
         }
-
-        esp_openthread_lock_acquire(portMAX_DELAY);
-        joiner_err = otCommissionerAddJoiner(instance, NULL, pskd, 0);
-        esp_openthread_lock_release();
     }
 
     if (start_err != OT_ERROR_NONE || joiner_err != OT_ERROR_NONE) {

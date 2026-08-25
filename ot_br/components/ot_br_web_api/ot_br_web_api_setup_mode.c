@@ -17,18 +17,59 @@ static const char *TAG = "ot_br_setup_mode";
 static volatile bool s_setup_mode_active = false;
 static int64_t s_setup_mode_started_at = 0;
 
+static void commissioner_state_callback(otCommissionerState aState, void *aContext)
+{
+    switch (aState)
+    {
+        case OT_COMMISSIONER_STATE_ACTIVE:
+            ESP_LOGI(TAG, "Commissioner ACTIVE");
+            break;
+
+        case OT_COMMISSIONER_STATE_PETITION:
+            ESP_LOGI(TAG, "Commissioner PETITION");
+            break;
+
+        case OT_COMMISSIONER_STATE_DISABLED:
+            ESP_LOGI(TAG, "Commissioner DISABLED");
+            break;
+
+        default:
+            ESP_LOGI(TAG, "Commissioner state: %d", aState);
+            break;
+    }
+}
 
 static void auto_open_commissioning(void)
 {
     otInstance *instance = esp_openthread_get_instance();
     esp_openthread_lock_acquire(portMAX_DELAY);
-    otCommissionerStop(instance);
-    otError err = otCommissionerStart(instance, NULL, NULL, NULL);
+
+    otError err;
+
+    if (otCommissionerGetState(instance) != OT_COMMISSIONER_STATE_DISABLED)
+    {
+        ESP_LOGW(TAG, "Commissioner already active - stopping first");
+
+        err = otCommissionerStop(instance);
+
+        ESP_LOGI(TAG, "otCommissionerStop: %s (%d)",
+                 otThreadErrorToString(err), err);
+    }
+
+    err = otCommissionerStart(instance, commissioner_state_callback, NULL, NULL);
+    ESP_LOGI(TAG, "otCommissionerStart: %s (%d)",
+         otThreadErrorToString(err), err);
+
     if (err == OT_ERROR_NONE) {
-        // Timeout = 600s (10 Minuten) - deckt exakt das Setup-Fenster ab,
-        // kein periodisches Nachtragen noetig
-        otCommissionerAddJoiner(instance, NULL, JOINER_PSKD, 600);
-        ESP_LOGI(TAG, "Open commissioning automatically for 10 minutes");
+        err = otCommissionerAddJoiner(instance, NULL, JOINER_PSKD, 600);
+        ESP_LOGI(TAG, "otCommissionerAddJoiner: %s (%d)",
+         otThreadErrorToString(err), err);
+
+        if (err == OT_ERROR_NONE)
+        {
+            ESP_LOGI(TAG,
+                     "Open commissioning enabled for 600 seconds");
+        }
     }
     esp_openthread_lock_release();
 }
@@ -46,15 +87,6 @@ static void button_task(void *arg)
     bool was_pressed = false;
 
     while (1) {
-        // uncomment for debug the button state
-        //
-        // static int64_t last_log = 0;
-        // int64_t now = esp_timer_get_time() / 1000;
-        // if (now - last_log > 1000) {
-        //     ESP_LOGD(TAG, "GPIO0 state: %d", gpio_get_level(BUTTON_GPIO));
-        //     last_log = now;
-        // }
-
         bool pressed = (gpio_get_level(BUTTON_GPIO) == 0);  // Active-Low
 
         if (pressed && !was_pressed) {
@@ -72,12 +104,12 @@ static void button_task(void *arg)
         }
         was_pressed = pressed;
 
-        // Zeitfenster automatisch ablaufen lassen
+        // let the timeframe expire automatically
         if (s_setup_mode_active) {
             int64_t elapsed = (esp_timer_get_time() / 1000) - s_setup_mode_started_at;
             if (elapsed > SETUP_WINDOW_MS) {
                 s_setup_mode_active = false;
-                ESP_LOGI(TAG, "Setup-Modus abgelaufen");
+                ESP_LOGI(TAG, "Setup-Modus is expired");
             }
         }
 
