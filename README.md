@@ -79,8 +79,8 @@ http://esp-ot-br.local
 
 <img src="doc/images/esp32-s31-function-coreboard-1.webp" height="200" alt="ESP31-S31 dev board" />
 
-### SoC with Co-Processor
+## Thread end device example
 
-(- ESP32-P4 with Radio Co-Processor (RCP) e.g. ESP32-C6, ESP32-H2, ESP32-C5 - not tested)
+### Thread CoAP light
 
-(- ESP Thread Border Router - ESP32-S3 with ESP32-H2 - not tested)
+- LED with RGB: https://github.com/mcuw/esp32-thread-coap-light
