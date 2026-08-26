@@ -1,5 +1,8 @@
 # Thread Border Router with ESP32
 
+<img src="doc/images/thread_architecture_overview.webp" alt="thread architecture overview diagram" />
+
+
 ## Bullet points
 
 - Supports single ESP32-S31 microcontroller setup
@@ -73,6 +76,8 @@ http://esp-ot-br.local
 ### Single SoC Module
 
 - ESP32-S31 single SoC (Function-CoreBoard-1, Korvo-1)
+
+<img src="doc/images/esp32-s31-function-coreboard-1.webp" height="200" alt="ESP31-S31 dev board" />
 
 ### SoC with Co-Processor
 
