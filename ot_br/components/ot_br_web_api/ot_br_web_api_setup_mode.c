@@ -74,6 +74,18 @@ static void auto_open_commissioning(void)
     esp_openthread_lock_release();
 }
 
+static void stop_commissioning(void)
+{
+    otInstance *instance = esp_openthread_get_instance();
+    esp_openthread_lock_acquire(portMAX_DELAY);
+
+    otError err = otCommissionerStop(instance);
+    ESP_LOGI(TAG, "otCommissionerStop: %s (%d)",
+        otThreadErrorToString(err), err);
+
+    esp_openthread_lock_release();
+}
+
 static void button_task(void *arg)
 {
     gpio_config_t cfg = {
@@ -109,6 +121,7 @@ static void button_task(void *arg)
             int64_t elapsed = (esp_timer_get_time() / 1000) - s_setup_mode_started_at;
             if (elapsed > SETUP_WINDOW_MS) {
                 s_setup_mode_active = false;
+                stop_commissioning();             
                 ESP_LOGI(TAG, "Setup-Modus is expired");
             }
         }
