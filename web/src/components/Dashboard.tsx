@@ -1,11 +1,13 @@
 import { $, component$, useSignal, useVisibleTask$ } from '@qwik.dev/core';
 import { apiGet } from '../lib/api';
+import { getStoredToken, onTokenChanged, setStoredToken } from '../lib/token';
 import CoapLightControl from './CoapLightControl';
 import CoapTester from './CoapTester';
 import CommissionerPanel from './CommissionerPanel';
 import DeviceInfo from './DeviceInfo';
 import NeighborList from './NeighborList';
 import OtaBanner from './OtaBanner';
+import SetupTokenTransfer from './SetupTokenTransfer';
 
 const TOKEN_STORAGE_KEY = 'ot_br_setup_token';
 
@@ -15,10 +17,15 @@ export default component$(() => {
   const checking = useSignal(false);
 
   useVisibleTask$(() => {
-    const stored = localStorage.getItem(TOKEN_STORAGE_KEY);
+    const stored = getStoredToken();
     if (stored) {
       token.value = stored;
     }
+    const cleanup = onTokenChanged(() => {
+      const updated = getStoredToken();
+      token.value = updated || null;
+    });
+    return cleanup;
   });
 
   const checkAndFetchToken = $(async () => {
@@ -32,7 +39,7 @@ export default component$(() => {
       if (status.setup_mode_active) {
         const result = await apiGet<{ token: string }>('/setup/token');
         token.value = result.token;
-        localStorage.setItem(TOKEN_STORAGE_KEY, result.token);
+        setStoredToken(result.token);
       }
     } catch (e) {
       console.error(e);
@@ -43,7 +50,7 @@ export default component$(() => {
 
   const resetToken = $(() => {
     localStorage.removeItem(TOKEN_STORAGE_KEY);
-    token.value = null;
+    window.dispatchEvent(new CustomEvent('ot-br-token-changed'));
   });
 
   if (token.value) {
@@ -51,9 +58,6 @@ export default component$(() => {
       <div>
         <div class="token-status">
           <span>✓ Eingerichtet</span>
-          <button type="button" onClick$={resetToken} class="link-button">
-            Zurücksetzen
-          </button>
         </div>
         <OtaBanner />
         <DeviceInfo />
@@ -61,6 +65,11 @@ export default component$(() => {
         <CommissionerPanel />
         <CoapTester />
         <CoapLightControl />
+        <SetupTokenTransfer>
+          <button type="button" onClick$={resetToken} class="link-button">
+            Zurücksetzen
+          </button>
+        </SetupTokenTransfer>
       </div>
     );
   }
@@ -83,6 +92,7 @@ export default component$(() => {
       {!setupModeActive.value && !checking.value && (
         <p class="muted">Noch kein Einrichtungsmodus erkannt.</p>
       )}
+      <SetupTokenTransfer />
     </div>
   );
 });

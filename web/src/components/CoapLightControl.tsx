@@ -1,5 +1,6 @@
 import { $, component$, useSignal, useVisibleTask$ } from '@qwik.dev/core';
 import { type Neighbor, apiGet, apiPost } from '../lib/api';
+import { getStoredToken } from '../lib/token';
 
 interface NeighborWithAddr extends Neighbor {
   rloc_address: string;
@@ -43,7 +44,7 @@ export default component$(() => {
       message.value = 'Device not found in the network';
       return;
     }
-    const token = localStorage.getItem('ot_br_setup_token') ?? '';
+    const token = getStoredToken();
     const hex = color.value.replace('#', '');
     const r = Number.parseInt(hex.substring(0, 2), 16);
     const g = Number.parseInt(hex.substring(2, 4), 16);

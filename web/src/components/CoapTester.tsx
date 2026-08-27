@@ -1,5 +1,6 @@
 import { $, component$, useSignal, useVisibleTask$ } from '@qwik.dev/core';
 import { type Neighbor, apiGet, apiPost } from '../lib/api';
+import { getStoredToken } from '../lib/token';
 
 interface NeighborWithAddr extends Neighbor {
   rloc_address: string;
@@ -45,7 +46,8 @@ export default component$(() => {
       return;
     }
 
-    const token = localStorage.getItem('ot_br_setup_token') ?? '';
+    const token = getStoredToken();
+
     sending.value = true;
     response.value =
       'Sending (can take a moment during network synchronization)...';

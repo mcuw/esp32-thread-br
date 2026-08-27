@@ -1,5 +1,6 @@
 import { $, component$, useSignal } from '@qwik.dev/core';
 import { apiPost } from '../lib/api';
+import { getStoredToken } from '../lib/token';
 
 export default component$(() => {
   const status = useSignal<'idle' | 'starting' | 'active' | 'error'>('idle');
@@ -8,7 +9,8 @@ export default component$(() => {
   const message = useSignal('');
 
   const openCommissioning = $(async () => {
-    const token = localStorage.getItem('ot_br_setup_token') ?? '';
+    const token = getStoredToken();
+
     status.value = 'starting';
     try {
       await apiPost('/thread/commissioner/open', token, { pskd: pskd.value });
@@ -35,6 +37,7 @@ export default component$(() => {
       </label>
       <button
         type="button"
+        style="margin-left: 8px"
         onClick$={openCommissioning}
         disabled={status.value === 'starting'}
       >

@@ -200,6 +200,18 @@ const { title } = Astro.props;
     opacity: 0.9;
   }
 
+  .button-row {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+  }
+
+  .button-row button {
+    flex: 1;
+    min-width: 100px;
+  }
+
   .progress-bar {
     background: var(--surface-hover);
     border-radius: 4px;

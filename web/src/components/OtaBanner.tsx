@@ -1,5 +1,6 @@
 import { $, component$, useSignal, useVisibleTask$ } from '@qwik.dev/core';
 import { apiGet, apiPost } from '../lib/api';
+import { getStoredToken, onTokenChanged } from '../lib/token';
 
 interface GhRelease {
   tag_name: string;
@@ -27,7 +28,10 @@ export default component$(() => {
   const lastError = useSignal('');
 
   useVisibleTask$(async () => {
-    token.value = localStorage.getItem('ot_br_setup_token') ?? '';
+    token.value = getStoredToken();
+    const cleanup = onTokenChanged(() => {
+      token.value = getStoredToken();
+    });
 
     const status = await apiGet<OtaStatus>('/ota/status');
     currentVersion.value = status.current_version;
