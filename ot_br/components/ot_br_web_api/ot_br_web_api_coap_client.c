@@ -9,6 +9,8 @@
 #include "openthread/netdiag.h"
 #include "freertos/semphr.h"
 
+#include "ot_coap_client.h"
+
 static const char *TAG = "ot_br_coap_client";
 static SemaphoreHandle_t s_response_sem = NULL;
 static otCoapCode s_last_response_code = 0;
@@ -43,12 +45,13 @@ void ot_br_coap_client_init(void)
     s_response_sem = xSemaphoreCreateBinary();
 
     otInstance *instance = esp_openthread_get_instance();
+
     esp_openthread_lock_acquire(portMAX_DELAY);
-    otError err = otCoapStart(instance, OT_DEFAULT_COAP_PORT);
+    esp_err_t err = ot_coap_client_ensure_started(instance);
     esp_openthread_lock_release();
 
-    if (err != OT_ERROR_NONE && err != OT_ERROR_ALREADY) {
-        ESP_LOGE("ot_br_coap_client", "otCoapStart fehlgeschlagen: %d", err);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to start CoAP-Client");
     }
 }
 
