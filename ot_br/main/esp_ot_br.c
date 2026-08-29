@@ -155,31 +155,6 @@ void app_main()
     ESP_ERROR_CHECK(esp_coex_wifi_i154_enable());
 #endif
 
-    // Falls bereits ein Dataset persistiert ist, automatisch beitreten.
-    // Es erfordert kein "ot ifconfig up" oder "ot thread start" in der CLI, da dies hiermit erledigt wird.
-    if (esp_openthread_lock_acquire(pdMS_TO_TICKS(1000))) {
-        otInstance *instance = esp_openthread_get_instance();
-        if (otDatasetIsCommissioned(instance)) {
-            otError err1 = otIp6SetEnabled(instance, true);
-            otError err2 = otThreadSetEnabled(instance, true);
-            if (err1 == OT_ERROR_NONE && err2 == OT_ERROR_NONE) {
-                ESP_LOGI(TAG, "Auto-attach: persistiertes Dataset gefunden, Thread gestartet");
-            } else {
-                ESP_LOGW(TAG, "Auto-attach fehlgeschlagen (ip6: %d, thread: %d)", err1, err2);
-            }
-        } else {
-            ESP_LOGI(TAG, "Kein Dataset vorhanden - warte auf manuelle Kommissionierung");
-        }
-        esp_openthread_lock_release();
-    } else {
-        ESP_LOGE(TAG, "Konnte OpenThread-Lock nicht erhalten");
-    }
-
-    // UI
-    ESP_ERROR_CHECK(ot_br_web_api_start(esp_openthread_get_instance()));
-
-    // health check: mark current firmware as valid to disable rollback protection
-    ot_br_ota_mark_valid();
 
 #endif
 }
