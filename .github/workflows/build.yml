@@ -1,4 +1,4 @@
-name: Web Check
+name: Check build
 
 permissions:
   contents: read
@@ -15,7 +15,7 @@ jobs:
         os: [ubuntu-latest]
         node: [24.19]
         experimental: [false]
-    name: 👷 CI @qwik.dev/astro Node-${{ matrix.node }} under ${{ matrix.os }}
+    name: 📋 CI ESP-IDF + Node-${{ matrix.node }} under ${{ matrix.os }}
 
     steps:
       - name: 🚚 Get latest code
