@@ -79,8 +79,13 @@ http://esp-ot-br.local
 
 <img src="doc/images/esp32-s31-function-coreboard-1.webp" height="200" alt="ESP31-S31 dev board" />
 
-## Thread end device example
+## Thread end-device example
 
 ### Thread CoAP light
 
 - LED with RGB: https://github.com/mcuw/esp32-thread-coap-light
+
+### Thread underfloor heating
+
+- Underfloor heating end-device: [ESP32-Thread-Coap-Underfloor-Heating](https://github.com/mcuw/esp32-thread-coap-underfloor-heating)
+- Temperature and humidity sensor end-device: [ESP32-Thread-Sensor](https://github.com/mcuw/esp32-thread-sensor)
