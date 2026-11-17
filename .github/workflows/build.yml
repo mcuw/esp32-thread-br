@@ -3,7 +3,12 @@ name: Check build
 permissions:
   contents: read
 
-on: ["pull_request", "workflow_call"]
+on:
+  pull_request:
+  workflow_call:
+  # Feature branch "matter" is not merged into main -> build on every push
+  push:
+    branches: [matter]
 
 jobs:
   ci:
