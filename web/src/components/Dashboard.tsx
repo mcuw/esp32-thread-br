@@ -5,6 +5,7 @@ import CoapLightControl from './CoapLightControl';
 import CoapTester from './CoapTester';
 import CommissionerPanel from './CommissionerPanel';
 import DeviceInfo from './DeviceInfo';
+import MatterPanel from './MatterPanel';
 import NeighborList from './NeighborList';
 import OtaBanner from './OtaBanner';
 import SetupTokenTransfer from './SetupTokenTransfer';
@@ -62,6 +63,7 @@ export default component$(() => {
         <OtaBanner />
         <DeviceInfo />
         <NeighborList />
+        <MatterPanel />
         <CommissionerPanel />
         <CoapTester />
         <CoapLightControl />

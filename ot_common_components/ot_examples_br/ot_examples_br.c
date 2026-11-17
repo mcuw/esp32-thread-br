@@ -22,6 +22,7 @@
 
 #include "ot_br_web_api.h"
 #include "ot_br_web_api_ota.h"
+#include "ot_br_web_api_matter.h"
 
 #define TAG "ot_examples_br"
 
@@ -45,6 +46,8 @@ static void ot_br_init(void *ctx)
     err = esp_openthread_border_router_init();
     if (err == ESP_OK) {
         otInstance *instance = esp_openthread_get_instance();
+        // Matter-ready: SRP server + NAT64
+        ot_br_matter_ready_init(instance);
         if (otDatasetIsCommissioned(instance)) {
             otError err1 = otIp6SetEnabled(instance, true);
             otError err2 = otThreadSetEnabled(instance, true);

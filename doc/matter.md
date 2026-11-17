@@ -24,14 +24,29 @@ Matter-Controller (Apple Home, Google Home, Home Assistant, `chip-tool`).
 
 ### Stufe 1 – „Matter-ready“ TBR (ohne Matter-Stack)
 
-- [ ] SRP-Server + Advertising Proxy explizit aktivieren/prüfen
-      (`ot srp server state`, `_matter._tcp` im LAN per `dns-sd -B _matter._tcp`)
-- [ ] NAT64 aktivieren (`CONFIG_OPENTHREAD_NAT64`), DNS64 Upstream
-- [ ] Dataset als TLV-Hex für Controller abrufbar (`chip-tool pairing ble-thread … hex:<tlvs>`)
-- [ ] Web-UI: SRP-Hosts/Services anzeigen (neuer Endpoint `/api/thread/srp`)
+Umgesetzt (Kconfig-Menü „OT BR Matter support“, beide Optionen standardmäßig an):
+
+- [x] SRP-Server im Auto-Enable-Modus (`CONFIG_OT_BR_MATTER_SRP_AUTO_ENABLE`):
+      läuft, sobald Border Routing läuft
+- [x] NAT64-Prefix-Manager aktiviert (`CONFIG_OT_BR_MATTER_NAT64`): publiziert einen
+      NAT64-Prefix ins Thread-Netz, sobald einer verfügbar ist
+- [x] `GET /api/thread/srp` – SRP-Status, registrierte Hosts/Services; Matter-Services
+      (`_matter._tcp`, `_matterc._udp`, `_matterd._udp`) werden markiert, bei
+      operativen Services werden Compressed-Fabric-ID und Node-ID ausgelesen
+- [x] `GET /api/thread/border-routing` – Border-Routing-Status, OMR-/On-Link-Prefix, NAT64
+- [x] `GET /api/thread/dataset/tlvs` (Auth: `X-Setup-Token`) – aktives Dataset als TLV-Hex
+      für Matter-Controller, z. B. `chip-tool pairing ble-thread <node-id> hex:<tlvs> <pin> <discriminator>`
+- [x] Web-UI: Panel „Matter“ mit Status, Matter-Geräteliste und Dataset-Export
+- [ ] Auf Hardware testen:
+      - `GET /api/thread/srp` → `"state": "running"`
+      - Matter-Gerät (z. B. esp-matter `light` auf ESP32-H2/C6) per `chip-tool` mit dem
+        exportierten Dataset in Betrieb nehmen
+      - im LAN: `dns-sd -B _matter._tcp` bzw. `avahi-browse -r _matter._tcp` muss das Gerät zeigen
+        (Advertising Proxy der ESP-Thread-Lib)
+      - NAT64: `ping 8.8.8.8` vom Thread-Gerät; ohne NAT64 im Heimnetz bleibt der
+        Prefix-Manager ggf. `Idle`
 - [ ] Optional: OTBR-REST-kompatible Endpoints (`/node/dataset/active`, `/node/state`, …)
       → Integration in Home Assistant „OpenThread Border Router“
-- [ ] Test: Matter-Gerät (z. B. esp-matter `light` auf ESP32-H2/C6) via Controller in dieses Thread-Netz bringen
 
 ### Stufe 2 – TBR als Matter-Gerät (esp-matter)
 

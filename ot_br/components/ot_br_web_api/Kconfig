@@ -1,0 +1,18 @@
+menu "OT BR Matter support"
+
+    config OT_BR_MATTER_SRP_AUTO_ENABLE
+        bool "Enable SRP server auto-enable mode"
+        default y
+        help
+            Matter-over-Thread devices register their DNS-SD services
+            (_matter._tcp, _matterc._udp) with the SRP server of the border router.
+            In auto-enable mode the SRP server runs whenever border routing runs.
+
+    config OT_BR_MATTER_NAT64
+        bool "Enable NAT64 prefix manager"
+        default y
+        help
+            Publishes a NAT64 prefix into the Thread network, so that Thread
+            devices can reach IPv4-only hosts (e.g. for OTA or cloud services).
+
+endmenu

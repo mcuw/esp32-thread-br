@@ -17,6 +17,8 @@
 
 - REST-API with Setup-Token-Auth (Device-Info, Thread-State, Dataset, Neighbors, Commissioner, OTA)
 
+- Matter-ready: SRP server, NAT64, SRP/Matter device list and dataset TLV export for Matter controllers (see [doc/matter.md](doc/matter.md))
+
 - OTA with GitHub Releases, including Rollback-Protection
 
 - 16-MB-Partitionslayout incl. prepared nvs_keys for future encryption
